@@ -4,12 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Architect.IQ: an agentic estimation and solutioning engine for Sparq. Takes a PRD plus
-client context and produces a reference architecture, effort estimate, cost model, and
-deal-shaping scenarios. Standalone full-stack app — FastAPI backend (`src/architect_iq/`)
+Fathom: an agentic estimation and solutioning engine for Sparq's Solutions Consulting
+and Delivery teams (an internal tool — not one of Sparq's client-facing ".IQ" AI
+offerings, hence the different naming pattern). Named for the nautical unit of depth
+and the verb "to fathom" (to grasp the full extent of something), both of which fit a
+tool that measures and estimates scope from context. Takes a PRD plus client context
+and produces a reference architecture, effort estimate, cost model, and deal-shaping
+scenarios. Standalone full-stack app — FastAPI backend (`src/architect_iq/`)
 + React/TypeScript/Tailwind frontend (`frontend/`) — not a library or CLI tool, despite
 the `architectiq` console script stub in `pyproject.toml` (not yet implemented; see
-DECISIONS.md D11).
+DECISIONS.md D11). The Python package/module is still named `architect_iq` on disk —
+see below if you're taking on the full code-level rename.
 
 `DECISIONS.md` is the log of every non-obvious judgment call made building this (why
 things are the way they are, what was explicitly flagged to the product owner and not

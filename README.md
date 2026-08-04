@@ -1,9 +1,12 @@
-# Architect.IQ
+# Fathom
 
-Agentic estimation and solutioning engine. Takes a PRD plus client context (tech
-stack, compliance posture, team skills) and produces a reference architecture,
-effort estimate, cost model, and deal-shaping scenarios — compressing the
-discovery-to-SOW cycle.
+Fathom is named for the nautical unit of depth and the verb "to fathom" — to
+grasp the full extent of something — fitting for an agentic estimation and
+solutioning engine built for Sparq's Solutions Consulting and Delivery teams (an
+internal instrument, not one of Sparq's client-facing ".IQ" AI offerings). It
+takes a PRD plus client context (tech stack, compliance posture, team skills) and
+produces a reference architecture, effort estimate, cost model, and deal-shaping
+scenarios, compressing the discovery-to-SOW cycle.
 
 Built architecture-first around a **Solution Graph**
 (`requirements → capabilities → components → work items → effort → team → cost`):
