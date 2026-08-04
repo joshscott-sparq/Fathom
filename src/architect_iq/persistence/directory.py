@@ -75,9 +75,9 @@ class SQLiteDirectoryRepository:
     # admin via ARCHITECTIQ_ADMIN_EMAIL/PASSWORD; these dev creds must not ship to
     # production as-is.
     SAMPLE_USERS = [
-        ("admin@architect.iq", "Administrator", Role.ADMIN, "admin123"),
-        ("user@architect.iq", "Sample User", Role.USER, "user123"),
-        ("client@architect.iq", "Sample Client", Role.CLIENT, "client123"),
+        ("admin@teamsparq.com", "Administrator", Role.ADMIN, "admin123"),
+        ("user@teamsparq.com", "Sample User", Role.USER, "user123"),
+        ("client@teamsparq.com", "Sample Client", Role.CLIENT, "client123"),
     ]
 
     def _seed_users(self) -> None:
@@ -89,7 +89,7 @@ class SQLiteDirectoryRepository:
             "ARCHITECTIQ_ADMIN_PASSWORD and rotate credentials in production.",
             stacklevel=2,
         )
-        admin_email = os.environ.get("ARCHITECTIQ_ADMIN_EMAIL", "admin@architect.iq")
+        admin_email = os.environ.get("ARCHITECTIQ_ADMIN_EMAIL", "admin@teamsparq.com")
         admin_password = os.environ.get("ARCHITECTIQ_ADMIN_PASSWORD", "admin123")
         self.create_user(email=admin_email, name="Administrator", role=Role.ADMIN, password=admin_password)
         for email, name, role, password in self.SAMPLE_USERS[1:]:

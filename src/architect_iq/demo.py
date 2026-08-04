@@ -229,7 +229,7 @@ def seed_demo(service: EstimateService) -> dict:
     existing = {s.project_name for s in service.list_estimates()}
     created: list[dict] = []
 
-    sample_user = directory.get_user_by_email("user@architect.iq")
+    sample_user = directory.get_user_by_email("user@teamsparq.com")
     owner_id = sample_user.id if sample_user else None
     accounts = {a.name: a for a in directory.list_accounts()}
 
@@ -265,7 +265,7 @@ def seed_demo(service: EstimateService) -> dict:
         })
 
     # Assign the sample client to the first account so they see read-only estimates.
-    client = directory.get_user_by_email("client@architect.iq")
+    client = directory.get_user_by_email("client@teamsparq.com")
     if client and accounts and not directory.visible_opportunity_ids(client.id):
         first = accounts.get("Acme Insurance") or next(iter(accounts.values()))
         directory.assign_client(client.id, account_id=first.id)
@@ -289,8 +289,8 @@ def seed_demo(service: EstimateService) -> dict:
             service.compute_scenarios(lead)
         except Exception:  # noqa: BLE001 - scenarios are best-effort in seeding
             pass
-        directory.add_share(lead, "user@architect.iq", Permission.COMMENT)
-        directory.create_share_link(lead, "admin@architect.iq")
+        directory.add_share(lead, "user@teamsparq.com", Permission.COMMENT)
+        directory.create_share_link(lead, "admin@teamsparq.com")
         directory.add_comment(lead, "Sample Client", "Can we see a nearshore staffing option for this?")
         directory.add_comment(lead, "Administrator", "Added an agentic + nearshore scenario below — ~60% cost reduction.")
 

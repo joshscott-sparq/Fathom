@@ -42,7 +42,7 @@ export function Login({ demoError }: { demoError?: string | null }) {
         <div className="flex items-center gap-3 justify-center mb-6">
           <img src="/brand/Sparq-Logo-White.svg" alt="Sparq" className="h-7" />
           <div className="text-white text-lg font-semibold">
-            Architect<span className="text-brand-orange">.IQ</span>
+            Fathom
           </div>
         </div>
         {demoError && (
@@ -67,7 +67,7 @@ export function Login({ demoError }: { demoError?: string | null }) {
         </form>
         <div className="text-white/70 text-[12px] mt-4 bg-black/20 rounded-lg p-3">
           <div className="font-semibold text-white mb-1">Sample logins</div>
-          admin@architect.iq / admin123 · user@architect.iq / user123 · client@architect.iq / client123
+          admin@teamsparq.com / admin123 · user@teamsparq.com / user123 · client@teamsparq.com / client123
         </div>
       </div>
     </div>

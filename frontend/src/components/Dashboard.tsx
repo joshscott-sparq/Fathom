@@ -30,7 +30,7 @@ export function Dashboard({ userName, canCreate, seeding = false }: {
     <div>
       <h1 className="text-[24px] font-bold mb-1">Welcome back{userName ? `, ${userName}` : ""}</h1>
       <p className="text-muted text-[14px] mb-5 max-w-2xl">
-        Architect.IQ turns a PRD and client context into a live reference architecture, effort estimate,
+        Fathom turns a PRD and client context into a live reference architecture, effort estimate,
         cost model, and staffing plan. Start from an Opportunity, add context, and every number updates
         automatically as you go — there's nothing to click "Generate."
       </p>

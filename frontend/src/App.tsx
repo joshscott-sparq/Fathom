@@ -49,7 +49,7 @@ export default function App() {
     if (!DEMO_MODE || demoTried.current || loading || user) return;
     demoTried.current = true;
     setDemoSeeding(true);
-    login("admin@architect.iq", "admin123")
+    login("admin@teamsparq.com", "admin123")
       .then(() => api.seedDemo())
       .then(() => setListKey((k) => k + 1))
       .catch(() => setDemoError("Couldn't reach the backend on :8000. Start it first (see README Quick start), then reload."))
@@ -88,7 +88,7 @@ export default function App() {
           <img src="/brand/Sparq-Logo-White.svg" alt="Sparq" className="h-6 w-auto block" />
           <div className="w-px h-5 bg-stone-600 hidden sm:block" />
           <button className="font-semibold text-base tracking-tight text-white shrink-0" onClick={() => navigate("/")}>
-            Architect<span className="text-brand-orange">.IQ</span>
+            Fathom
           </button>
         </div>
 

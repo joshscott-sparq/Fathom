@@ -48,7 +48,7 @@ def test_client_cannot_clone(tmp_path, monkeypatch):
     opp = c.post("/api/opportunities", json={"name": "RAG", "account_id": account["id"]}).json()
     est = c.post("/api/estimates", json={"project_name": "Original", "prd_text": RAG_PRD,
                                          "client_context": {"tech_stack": ["Databricks"]}, "opportunity_id": opp["id"]}).json()["estimate_id"]
-    client_user = next(u for u in c.get("/api/users").json() if u["email"] == "client@architect.iq")
+    client_user = next(u for u in c.get("/api/users").json() if u["email"] == "client@teamsparq.com")
     c.post(f"/api/users/{client_user['id']}/assign", json={"account_id": account["id"]})
 
     login_as(c, "client")

@@ -25,7 +25,7 @@ def test_login_and_me(tmp_path, monkeypatch):
     c = _admin(tmp_path, monkeypatch)
     me = c.get("/api/auth/me").json()
     assert me["role"] == "admin"
-    bad = c.post("/api/auth/login", json={"email": "admin@architect.iq", "password": "wrong"})
+    bad = c.post("/api/auth/login", json={"email": "admin@teamsparq.com", "password": "wrong"})
     assert bad.status_code == 401
 
 
@@ -54,7 +54,7 @@ def test_share_by_email_and_name(tmp_path, monkeypatch):
     est = _create_estimate(c, "Shared est")
 
     # Share by email (view) — user can now see it.
-    assert c.post(f"/api/estimates/{est}/shares", json={"principal": "user@architect.iq", "permission": "view"}).status_code == 200
+    assert c.post(f"/api/estimates/{est}/shares", json={"principal": "user@teamsparq.com", "permission": "view"}).status_code == 200
     login_as(c, "user")
     assert c.get(f"/api/estimates/{est}").status_code == 200
     assert c.post(f"/api/estimates/{est}/recompute", json={"ai_boost": 0.2}).status_code == 403  # view only
@@ -86,7 +86,7 @@ def test_client_read_only_on_assigned_opportunity(tmp_path, monkeypatch):
                                              "notion_page_ref": "https://notion.so/demo"}).json()
     est = _create_estimate(c, "Opp est", opportunity_id=opp["id"])
 
-    client_user = next(u for u in c.get("/api/users").json() if u["email"] == "client@architect.iq")
+    client_user = next(u for u in c.get("/api/users").json() if u["email"] == "client@teamsparq.com")
     c.post(f"/api/users/{client_user['id']}/assign", json={"account_id": account["id"]})
 
     # Opportunity carries account, estimates, and (stub) Notion notes.

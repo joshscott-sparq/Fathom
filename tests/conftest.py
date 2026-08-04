@@ -6,9 +6,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 SAMPLE_CREDS = {
-    "admin": ("admin@architect.iq", "admin123"),
-    "user": ("user@architect.iq", "user123"),
-    "client": ("client@architect.iq", "client123"),
+    "admin": ("admin@teamsparq.com", "admin123"),
+    "user": ("user@teamsparq.com", "user123"),
+    "client": ("client@teamsparq.com", "client123"),
 }
 
 
