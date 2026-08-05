@@ -56,6 +56,40 @@ factor families" but the prose enumerates ~29 depending on how compound entries
 **Why:** Needs the workbook family list to reconcile exactly. FLAGGED to owner.
 Correcting is a data edit. Ref §2.4.
 
+## D27. Skill-authored flags (spec-iq's gap/conflict markers) recognized by exact text pattern, not a general skill protocol
+
+**Call:** Added `core/llm.py::_classify_skill_flag()`, checked first by both
+`classify_kind()` and `heuristic_classify_kind()`. It matches spec-iq's exact
+authored marker text — `⚑  Gap: ...` and `⚠  Conflict: ...` (the literal strings
+`skills/spec-iq/generate-prd.js`'s `gapFlag`/`conflictFlag` render into the
+`.docx`, which survive as plain text through Fathom's existing extraction) —
+and routes a gap straight to `assumption` and a conflict straight to `risk` at
+0.95 confidence, skipping the LLM call and the signal-matching heuristic
+entirely. This is a hardcoded recognizer for one skill's specific output
+format, not a general "skills can emit routable flags" protocol or a
+convention documented anywhere a skill author would discover it — a
+differently-worded flag (a different skill, or a future spec-iq version that
+changes its marker text) simply won't match and falls through to normal
+classification, no error, no silent misroute.
+
+**Why:** `skills/` (see `skills/README.md`) intentionally keeps skills
+decoupled from Fathom — no shared code, no dependency either direction. This
+recognizer is the one deliberate exception, justified because the alternative
+is worse: without it, a spec-iq-flagged gap or conflict is just another
+sentence to `classify_kind`, competing on signal words against every other
+kind with no privileged treatment — spec-iq's authors already did the work of
+saying "this is explicitly unresolved," and re-inferring that from prose
+would sometimes get it wrong where the source was already certain. Owner
+asked for the LLM layer to be "skill aware" after reviewing spec-iq as a
+candidate `skills/` addition.
+
+**What's deliberately left undone:** if more skills adopt a similar
+flagging convention, this should generalize into something skills declare
+(e.g. a small marker-format registry) rather than accreting one bespoke
+regex pair per skill in `core/llm.py`. Not built now because there's exactly
+one skill and one marker format to support — premature to design the
+registry's shape from a sample size of one.
+
 ## D26. D25's classifier wired to routing; pinned_work_items to survive rebuild-from-scratch recalcs
 **Call:** Wired D25's `classify_kind` into the Requirements-tab drop flow (previously
 deferred). Dropping a file/URL now: (1) adds exactly one Requirements entry — a

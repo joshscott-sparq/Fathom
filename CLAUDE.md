@@ -218,6 +218,37 @@ a key present) — tests set `use_llm=False` explicitly rather than relying on t
 being absent in the test environment (see `tests/conftest.py`, which also deletes
 `ANTHROPIC_API_KEY` from the environment for API-level tests).
 
+## Skills — loosely coupled, not merged
+
+`skills/` holds standalone Claude Skills that pair well with Fathom without being part
+of it — no Fathom code imports anything from here, and nothing in here should assume
+Fathom's internals. Each skill lives in `skills/<name>/`, laid out as an installable
+Claude Skill package (`SKILL.md` plus whatever it needs), with a `PROVENANCE.md`
+stating where it's actually maintained and whether this is a vendored snapshot or the
+living copy. See `skills/README.md` for the full convention.
+
+The first one, `skills/spec-iq/`, generates a formatted, pre-filled PRD `.docx` from
+messy source material (meeting notes, transcripts) or a live interview, with gap
+(`⚑`) and conflict (`⚠`) flagging and a readiness scorecard. It's relevant upstream of
+Fathom's own pipeline, which assumes a PRD already exists: when a user's starting
+material is rough notes rather than a real PRD, suggest running it through spec-iq
+first, then dropping the resulting `.docx` into Fathom's Requirements tab — a
+PRD built to spec-iq's rubric (Problem Statement, KPIs, Personas, Functional
+Requirements, Milestones, Stakeholders) extracts more cleanly via `core/llm.py`'s
+`classify_kind()`/requirement-extraction path than raw transcript text does.
+
+`core/llm.py::_classify_skill_flag()` makes that pairing concrete rather than just
+promised: both `classify_kind()` and `heuristic_classify_kind()` check text against
+spec-iq's exact gap/conflict marker format (`⚑  Gap: ...` / `⚠  Conflict: ...`, per
+`skills/spec-iq/generate-prd.js`'s `gapFlag`/`conflictFlag`) before doing anything
+else, routing a gap straight to `assumption` and a conflict straight to `risk` at
+0.95 confidence — no LLM call, no signal-matching, since a skill-authored flag is
+already an explicit signal, not something to infer. This is intentionally coupled to
+spec-iq's specific marker text; a differently-formatted skill would need its own
+recognizer alongside this one (see D27), not a change to this one's regexes. It's a
+vendored snapshot (see `skills/spec-iq/PROVENANCE.md`) — don't edit it here expecting
+changes to take effect anywhere but this copy; real changes go through its own repo.
+
 ## Next steps: development plan toward "fully functional"
 
 Reviewed 2026-07-18 against the actual code (not just DECISIONS.md, which has drifted —

@@ -265,6 +265,32 @@ def _kind_prompt_block(taxonomy: KindTaxonomy) -> str:
     return "\n".join(lines)
 
 
+_SPEC_IQ_GAP = re.compile(r"^\s*⚑\s*Gap:\s*(.+)$", re.IGNORECASE | re.DOTALL)
+_SPEC_IQ_CONFLICT = re.compile(r"^\s*⚠\s*Conflict:\s*(.+)$", re.IGNORECASE | re.DOTALL)
+
+
+def _classify_skill_flag(text: str, taxonomy: KindTaxonomy) -> dict | None:
+    """Recognize an authored flag from a skill in skills/ — currently spec-iq's
+    gap (⚑) and conflict (⚠) markers (see skills/spec-iq/generate-prd.js's
+    gapFlag/conflictFlag) — and route it deterministically instead of asking
+    the LLM/heuristic to guess at what the source document already states
+    explicitly. A gap is information spec-iq's author flagged as missing —
+    an unconfirmed assumption until resolved. A conflict is contradictory
+    information between sources — an active risk to the estimate's accuracy
+    until resolved. Returns None if `text` carries no such marker, or if the
+    taxonomy this Fathom instance is running doesn't define the target kind.
+    """
+    if m := _SPEC_IQ_GAP.match(text):
+        kind, rationale = "assumption", "spec-iq flagged this as an unresolved gap (⚑) in the source document"
+    elif m := _SPEC_IQ_CONFLICT.match(text):
+        kind, rationale = "risk", "spec-iq flagged this as an unresolved conflict (⚠) in the source document"
+    else:
+        return None
+    if kind not in taxonomy.names():
+        return None
+    return {"kind": kind, "confidence": 0.95, "rationale": rationale, "title": _naive_title(m.group(1).strip())}
+
+
 def classify_kind(text: str, taxonomy: KindTaxonomy, *, client: LLMClient | None = None) -> dict:
     """Classify `text` (one extracted sentence/line) against the estimate-kind
     taxonomy (data/estimate_kinds.yaml) — is it an epic, feature, story,
@@ -279,7 +305,12 @@ def classify_kind(text: str, taxonomy: KindTaxonomy, *, client: LLMClient | None
     `kind` is always one of taxonomy.names(); if the model returns something
     else (hallucinated name, refusal, etc.), it falls back to "feature" — the
     taxonomy's closest general "this is scope to build" kind.
+
+    Skips the LLM call entirely for text carrying a skill-authored flag (see
+    `_classify_skill_flag`) — that's an explicit signal, not something to infer.
     """
+    if flagged := _classify_skill_flag(text, taxonomy):
+        return flagged
     names = taxonomy.names()
     system = (
         "You are a senior delivery lead filing a piece of text pulled from a source "
@@ -332,8 +363,12 @@ def heuristic_classify_kind(text: str, taxonomy: KindTaxonomy) -> dict:
     contribute to the score. Defaults to "feature" when nothing scores above
     zero. The "As a ... I want ..." story template is checked explicitly
     first since its literal taxonomy signal is a placeholder, not real text
-    to substring-match against.
+    to substring-match against. Checked before either: text carrying a
+    skill-authored flag (see `_classify_skill_flag`) routes deterministically,
+    since that's an explicit signal rather than something to infer.
     """
+    if flagged := _classify_skill_flag(text, taxonomy):
+        return flagged
     title = _naive_title(text)
     if _USER_STORY_PATTERN.search(text):
         return {"kind": "story", "confidence": 0.7, "rationale": "matches the user-story template", "title": title}

@@ -260,6 +260,12 @@ model over time). Put both behind TLS.
 - The engine runs fully without an API key (deterministic path); add the key to
   enable the LLM features.
 
+## Skills
+
+[`skills/`](skills/) holds standalone Claude Skills that pair well with Fathom
+without being merged into it — loosely coupled, not app dependencies. See
+[`skills/README.md`](skills/README.md) for the convention and what's there.
+
 ## Not yet built (later phases)
 
 The `architectiq` CLI, xlsx/summary emitters, the Claude skill wrapper, and deeper

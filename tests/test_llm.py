@@ -221,6 +221,38 @@ def test_heuristic_classify_kind_avoids_short_signal_false_positives():
     assert result["kind"] != "story_point"
 
 
+def test_classify_kind_routes_spec_iq_gap_to_assumption_without_calling_llm():
+    class ExplodingLLM:
+        def complete_json(self, system, user, *, max_tokens=4000):
+            raise AssertionError("should not call the LLM for a skill-authored flag")
+
+    result = llm.classify_kind("⚑  Gap: The budget cap for phase 2 is unclear", TAXONOMY, client=ExplodingLLM())
+    assert result["kind"] == "assumption"
+    assert result["confidence"] == 0.95
+    assert result["title"] == "The budget cap for phase 2"
+
+
+def test_classify_kind_routes_spec_iq_conflict_to_risk_without_calling_llm():
+    class ExplodingLLM:
+        def complete_json(self, system, user, *, max_tokens=4000):
+            raise AssertionError("should not call the LLM for a skill-authored flag")
+
+    result = llm.classify_kind(
+        "⚠  Conflict: Stakeholder list says Q3 launch but timeline says Q4", TAXONOMY, client=ExplodingLLM()
+    )
+    assert result["kind"] == "risk"
+    assert result["confidence"] == 0.95
+
+
+def test_heuristic_classify_kind_routes_spec_iq_flags():
+    gap = llm.heuristic_classify_kind("⚑  Gap: The budget cap for phase 2 is unclear", TAXONOMY)
+    assert gap["kind"] == "assumption"
+    conflict = llm.heuristic_classify_kind(
+        "⚠  Conflict: Stakeholder list says Q3 launch but timeline says Q4", TAXONOMY
+    )
+    assert conflict["kind"] == "risk"
+
+
 def test_group_into_epics_uses_llm_clustering():
     class FakeEpicLLM:
         def complete_json(self, system, user, *, max_tokens=4000):
