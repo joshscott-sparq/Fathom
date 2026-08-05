@@ -41,7 +41,7 @@ export function Login({ demoError }: { demoError?: string | null }) {
       <div className="w-full max-w-sm">
         <div className="flex items-center gap-3 justify-center mb-6">
           <img src="/brand/Sparq-Logo-White.svg" alt="Sparq" className="h-7" />
-          <div className="text-white text-lg font-semibold">
+          <div className="text-brand-orange text-lg font-semibold">
             Fathom
           </div>
         </div>

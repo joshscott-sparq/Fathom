@@ -11,7 +11,6 @@ scenarios, compressing the discovery-to-SOW cycle.
 Built architecture-first around a **Solution Graph**
 (`requirements → capabilities → components → work items → effort → team → cost`):
 every artifact is a projection of one object. See
-[`architect-iq-context.md`](architect-iq-context.md) for the spec and
 [`DECISIONS.md`](DECISIONS.md) for judgment calls.
 
 ## Features

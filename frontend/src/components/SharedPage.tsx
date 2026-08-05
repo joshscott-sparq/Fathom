@@ -17,7 +17,7 @@ export function SharedPage({ token }: { token: string }) {
         <div className="flex items-center gap-3.5">
           <img src="/brand/Sparq-Logo-White.svg" alt="Sparq" className="h-6 w-auto block" />
           <div className="w-px h-5 bg-stone-600" />
-          <div className="font-semibold text-base tracking-tight text-white">Fathom</div>
+          <div className="font-semibold text-base tracking-tight text-brand-orange">Fathom</div>
         </div>
         <span className="ml-auto text-[12px] text-stone-300">Shared view (read-only)</span>
       </header>

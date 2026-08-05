@@ -87,7 +87,7 @@ export default function App() {
         <div className="flex items-center gap-3.5">
           <img src="/brand/Sparq-Logo-White.svg" alt="Sparq" className="h-6 w-auto block" />
           <div className="w-px h-5 bg-stone-600 hidden sm:block" />
-          <button className="font-semibold text-base tracking-tight text-white shrink-0" onClick={() => navigate("/")}>
+          <button className="font-semibold text-base tracking-tight text-brand-orange shrink-0" onClick={() => navigate("/")}>
             Fathom
           </button>
         </div>
