@@ -2,8 +2,8 @@
 
 Passwords use PBKDF2-HMAC-SHA256 (stdlib, salted, high iteration count) stored as
 `pbkdf2_sha256$iterations$salt_hex$hash_hex`. Tokens are JWT (HS256) signed with
-ARCHITECTIQ_SECRET. A dev fallback secret is used when the env var is unset, with
-a warning — production MUST set ARCHITECTIQ_SECRET.
+FATHOM_SECRET. A dev fallback secret is used when the env var is unset, with
+a warning — production MUST set FATHOM_SECRET.
 """
 
 from __future__ import annotations
@@ -25,10 +25,10 @@ _DEV_SECRET = "dev-only-insecure-secret-change-me"
 
 
 def _secret() -> str:
-    secret = os.environ.get("ARCHITECTIQ_SECRET")
+    secret = os.environ.get("FATHOM_SECRET")
     if not secret:
         warnings.warn(
-            "ARCHITECTIQ_SECRET is not set; using an insecure dev secret. "
+            "FATHOM_SECRET is not set; using an insecure dev secret. "
             "Set it in production.",
             stacklevel=2,
         )

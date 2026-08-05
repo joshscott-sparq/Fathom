@@ -182,7 +182,7 @@ and comments are directory-level concerns in `persistence/directory.py`
 versioning and `persistence/rate_cards.py`'s rate-card management (multiple saved cards,
 one active + one default).
 
-All three persistence repos share one SQLite file (`ARCHITECTIQ_DB`, default
+All three persistence repos share one SQLite file (`FATHOM_DB`, default
 `architect_iq.db`) — swappable to Postgres behind the same repository interfaces if
 needed (README notes this as the multi-instance path).
 
@@ -213,7 +213,7 @@ response shapes change).
 `core/llm.py` / `core/vision.py` wrap the Anthropic SDK for requirement extraction,
 capability derivation, nuanced pattern matching, image/diagram vision, and the advisor's
 team-model suggestions. Every one of these has a deterministic heuristic fallback and
-runs fully without a key (`ARCHITECTIQ_DISABLE_LLM=1` forces the fallback path even with
+runs fully without a key (`FATHOM_DISABLE_LLM=1` forces the fallback path even with
 a key present) — tests set `use_llm=False` explicitly rather than relying on the key
 being absent in the test environment (see `tests/conftest.py`, which also deletes
 `ANTHROPIC_API_KEY` from the environment for API-level tests).
@@ -255,10 +255,10 @@ the last two tiers are ongoing maturity work, not one-time fixes.
   attempt-throttling or lockout — brute-forceable as-is. Needed before any non-local
   deployment.
 - **Startup only warns, doesn't fail, on insecure defaults.** Missing
-  `ARCHITECTIQ_SECRET` / `ARCHITECTIQ_ADMIN_PASSWORD` log a `UserWarning` (see
+  `FATHOM_SECRET` / `FATHOM_ADMIN_PASSWORD` log a `UserWarning` (see
   `auth/security.py`, `persistence/directory.py`) but the app still starts with the dev
   secret and default admin password. Consider a hard failure when
-  `ARCHITECTIQ_ENV=production` (or similar) is set.
+  `FATHOM_ENV=production` (or similar) is set.
 - **SQLite → Postgres path is asserted, not built.** README calls this "the
   multi-instance path" behind the same repository interfaces, but no Postgres
   implementation of `EstimateRepository` / `SQLiteDirectoryRepository` /

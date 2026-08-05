@@ -21,7 +21,7 @@ from typing import Protocol
 from ..models.kinds import KindTaxonomy
 
 # Latest Claude model suited to extraction/reasoning at good latency/cost.
-# Override with ARCHITECTIQ_LLM_MODEL.
+# Override with FATHOM_LLM_MODEL.
 DEFAULT_MODEL = "claude-sonnet-5"
 
 
@@ -30,16 +30,16 @@ class LLMClient(Protocol):
 
 
 def model_name() -> str:
-    return os.environ.get("ARCHITECTIQ_LLM_MODEL", DEFAULT_MODEL)
+    return os.environ.get("FATHOM_LLM_MODEL", DEFAULT_MODEL)
 
 
 def available() -> bool:
     """True when a real Anthropic call is possible.
 
-    Requires ANTHROPIC_API_KEY and that ARCHITECTIQ_DISABLE_LLM is not set (an
+    Requires ANTHROPIC_API_KEY and that FATHOM_DISABLE_LLM is not set (an
     escape hatch to force the deterministic path even when a key is present).
     """
-    if os.environ.get("ARCHITECTIQ_DISABLE_LLM", "").strip().lower() in {"1", "true", "yes"}:
+    if os.environ.get("FATHOM_DISABLE_LLM", "").strip().lower() in {"1", "true", "yes"}:
         return False
     return bool(os.environ.get("ANTHROPIC_API_KEY"))
 

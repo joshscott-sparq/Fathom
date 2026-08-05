@@ -123,14 +123,14 @@ database.
 
 ## Sample logins (dev)
 
-Seeded on first run for now (set `ARCHITECTIQ_ADMIN_PASSWORD` and rotate in
+Seeded on first run for now (set `FATHOM_ADMIN_PASSWORD` and rotate in
 production):
 
 | Role | Email | Password |
 |------|-------|----------|
-| Admin | `admin@architect.iq` | `admin123` |
-| User | `user@architect.iq` | `user123` |
-| Client | `client@architect.iq` | `client123` |
+| Admin | `admin@teamsparq.com` | `admin123` |
+| User | `user@teamsparq.com` | `user123` |
+| Client | `client@teamsparq.com` | `client123` |
 
 The sample client is assigned to the Acme Insurance account in demo mode, so they
 see those estimates read-only.
@@ -154,12 +154,12 @@ Copy [`.env.example`](.env.example) to `.env` (gitignored) and set values:
 | Variable | Purpose |
 |----------|---------|
 | `ANTHROPIC_API_KEY` | Enables LLM ingest/matching/advisor and image vision. Omitted → deterministic fallback. |
-| `ARCHITECTIQ_LLM_MODEL` | Override the Claude model (default `claude-sonnet-5`). |
-| `ARCHITECTIQ_DISABLE_LLM` | Force the deterministic path even with a key. |
-| `ARCHITECTIQ_DB` | SQLite path (default `architect_iq.db`). |
-| `ARCHITECTIQ_CORS` | Allowed API origins (comma-separated). |
-| `ARCHITECTIQ_SECRET` | **Required in production** — JWT signing secret (32+ bytes). |
-| `ARCHITECTIQ_ADMIN_EMAIL` / `ARCHITECTIQ_ADMIN_PASSWORD` | Override the seeded admin credentials. |
+| `FATHOM_LLM_MODEL` | Override the Claude model (default `claude-sonnet-5`). |
+| `FATHOM_DISABLE_LLM` | Force the deterministic path even with a key. |
+| `FATHOM_DB` | SQLite path (default `architect_iq.db`). |
+| `FATHOM_CORS` | Allowed API origins (comma-separated). |
+| `FATHOM_SECRET` | **Required in production** — JWT signing secret (32+ bytes). |
+| `FATHOM_ADMIN_EMAIL` / `FATHOM_ADMIN_PASSWORD` | Override the seeded admin credentials. |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `GOOGLE_REDIRECT_URI` | Enable Google SSO. |
 | `NOTION_API_KEY` | Enable live Notion notes (otherwise sample notes). |
 
@@ -249,8 +249,8 @@ uv pip install -e .            # or: pip install .
 uvicorn architect_iq.api.app:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 
-Set `ARCHITECTIQ_CORS` to the frontend origin, provide `.env` (or real env vars)
-with `ANTHROPIC_API_KEY` and a persistent `ARCHITECTIQ_DB` path (mount a volume so
+Set `FATHOM_CORS` to the frontend origin, provide `.env` (or real env vars)
+with `ANTHROPIC_API_KEY` and a persistent `FATHOM_DB` path (mount a volume so
 estimates and rate cards survive restarts — this is the memory that improves the
 model over time). Put both behind TLS.
 

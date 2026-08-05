@@ -1,7 +1,7 @@
 """Directory persistence: users, accounts, opportunities, assignments, shares.
 
 SQLite-backed, sharing the estimate database. Seeds a default admin on first use
-(credentials from ARCHITECTIQ_ADMIN_EMAIL / ARCHITECTIQ_ADMIN_PASSWORD, with a dev
+(credentials from FATHOM_ADMIN_EMAIL / FATHOM_ADMIN_PASSWORD, with a dev
 fallback and a warning).
 """
 
@@ -72,7 +72,7 @@ class SQLiteDirectoryRepository:
             )
 
     # One sample login per role for now (documented in the README). Override the
-    # admin via ARCHITECTIQ_ADMIN_EMAIL/PASSWORD; these dev creds must not ship to
+    # admin via FATHOM_ADMIN_EMAIL/PASSWORD; these dev creds must not ship to
     # production as-is.
     SAMPLE_USERS = [
         ("admin@teamsparq.com", "Administrator", Role.ADMIN, "admin123"),
@@ -86,11 +86,11 @@ class SQLiteDirectoryRepository:
                 return
         warnings.warn(
             "Seeding sample users with dev passwords (see README). Set "
-            "ARCHITECTIQ_ADMIN_PASSWORD and rotate credentials in production.",
+            "FATHOM_ADMIN_PASSWORD and rotate credentials in production.",
             stacklevel=2,
         )
-        admin_email = os.environ.get("ARCHITECTIQ_ADMIN_EMAIL", "admin@teamsparq.com")
-        admin_password = os.environ.get("ARCHITECTIQ_ADMIN_PASSWORD", "admin123")
+        admin_email = os.environ.get("FATHOM_ADMIN_EMAIL", "admin@teamsparq.com")
+        admin_password = os.environ.get("FATHOM_ADMIN_PASSWORD", "admin123")
         self.create_user(email=admin_email, name="Administrator", role=Role.ADMIN, password=admin_password)
         for email, name, role, password in self.SAMPLE_USERS[1:]:
             self.create_user(email=email, name=name, role=role, password=password)

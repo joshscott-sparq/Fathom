@@ -256,7 +256,7 @@ test alternative assumptions.
 **Call:** Added users/roles, an Account -> Opportunity -> Estimate domain model,
 estimate sharing, and public links.
 - **Auth:** local email+password (PBKDF2, stdlib) issuing JWTs (HS256, PyJWT)
-  signed with `ARCHITECTIQ_SECRET`. Google OIDC endpoints are scaffolded behind
+  signed with `FATHOM_SECRET`. Google OIDC endpoints are scaffolded behind
   `GOOGLE_CLIENT_ID/SECRET` (untested in sandbox); JumpCloud slots into the same
   `auth/oidc.py` seam. `.env` loaded via python-dotenv.
 - **Roles:** admin (all + manage users/accounts/opportunities/rates), user (owns
@@ -273,7 +273,7 @@ estimate sharing, and public links.
   and comments (comment/edit permission). Effective permission = max of
   role/ownership/assignment/share.
 - **Sample logins** seeded (admin/user/client, see README) for now; production
-  sets `ARCHITECTIQ_ADMIN_PASSWORD` and rotates.
+  sets `FATHOM_ADMIN_PASSWORD` and rotates.
 **Why:** Owner asked for a login with three roles, the SF/Notion-linked domain
 model, estimate sharing at three permission levels with public view-only links,
 sharing by email or name, sample per-role logins, and Google/JumpCloud SSO.
@@ -304,8 +304,8 @@ deferrable features, and that historical estimates train the suggestion engine.
 **Call:** LLM layer (`core/llm.py`, injectable client) does requirement
 extraction, capability derivation, and pattern ranking; each falls back to a
 deterministic heuristic on no-key/error. Enabled by `ANTHROPIC_API_KEY` (loaded
-from `.env` via python-dotenv); `ARCHITECTIQ_DISABLE_LLM` forces the heuristic
-path, `ARCHITECTIQ_LLM_MODEL` overrides the model. Team velocity now scales
+from `.env` via python-dotenv); `FATHOM_DISABLE_LLM` forces the heuristic
+path, `FATHOM_LLM_MODEL` overrides the model. Team velocity now scales
 sub-linearly with headcount (`core/velocity.py`, Brooks exponent 0.85) and the
 engineer-count knob scales team allocations, so adding engineers shortens the
 timeline without looking strictly cheaper (fixes the D11 bug).

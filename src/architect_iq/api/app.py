@@ -38,7 +38,7 @@ from ..service import EstimateService
 app = FastAPI(title="Architect.IQ", version="0.1.0")
 
 # The Vite dev server origin; CORS_ORIGINS overrides in other environments.
-_origins = os.environ.get("ARCHITECTIQ_CORS", "http://localhost:5173").split(",")
+_origins = os.environ.get("FATHOM_CORS", "http://localhost:5173").split(",")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_origins,
@@ -46,7 +46,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-service = EstimateService(db_path=os.environ.get("ARCHITECTIQ_DB", "architect_iq.db"))
+service = EstimateService(db_path=os.environ.get("FATHOM_DB", "architect_iq.db"))
 
 
 # --- Auth dependencies ---
