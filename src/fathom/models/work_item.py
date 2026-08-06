@@ -11,6 +11,8 @@ normalization is done in core, not here (DECISIONS.md D2).
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, Field, model_validator
 
 from .complexity import LinkedFactor
@@ -101,6 +103,13 @@ class WorkItem(BaseModel):
         "from, if any (D25's classify_kind routing). Mirrors ContextEntry.reference so a "
         "classified item keeps a traceable link back to its source artifact whether it's "
         "routed to a Context Panel tab or straight into the work breakdown.",
+    )
+    priority: Literal["must", "should", "could", "wont"] | None = Field(
+        default=None,
+        description="MoSCoW priority (D32) — vocabulary matches skills/spec-iq's Priority column "
+        "(Must Have/Should Have/Could Have/Won't Have, coded M/S/C/W) so a spec-iq-authored PRD's "
+        "priorities don't disagree with Fathom's. Label-only: doesn't affect effort/cost math or "
+        "Monte Carlo by itself — the Estimate grid's filter is what changes what totals over.",
     )
     linked_factors: list[LinkedFactor] = Field(
         default_factory=list,

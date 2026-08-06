@@ -19,9 +19,12 @@ from .models.results import ClientContext
 from .models.scenario import DeferralSuggestion, Scenario, TeamSuggestion
 from .models.solution_graph import SolutionGraph
 from .models.team import RateRow
+from .models.variables import Variables
 from .persistence.directory import SQLiteDirectoryRepository
 from .persistence.rate_cards import SavedRateCard, SQLiteRateCardRepository
 from .persistence.store import EstimateRepository, SQLiteEstimateRepository, StoredEstimate
+from .persistence.tshirt_scale import SQLiteTshirtScaleRepository
+from .persistence.variables import SQLiteVariablesRepository
 
 
 class EstimateService:
@@ -32,8 +35,33 @@ class EstimateService:
         resolved_db = getattr(self.repo, "db_path", db_path)
         # Persisted rate cards share the estimate database (one active, one default).
         self.rate_cards = SQLiteRateCardRepository(resolved_db)
+        # Org-wide Variables overrides (D31 tier 1); per-estimate overrides (tier 2)
+        # live on the estimate's own graph.variables via core/recompute.py instead.
+        self.variables_repo = SQLiteVariablesRepository(resolved_db)
+        # Org-wide t-shirt scale overrides (D34) — single-tier, no per-estimate version.
+        self.tshirt_repo = SQLiteTshirtScaleRepository(resolved_db)
         # Users, accounts, opportunities, assignments, shares, links, comments.
         self.directory = SQLiteDirectoryRepository(resolved_db)
+
+    def get_variables(self) -> Variables:
+        return self.variables_repo.effective_variables()
+
+    def get_variable_overrides(self) -> dict:
+        return self.variables_repo.get_overrides()
+
+    def update_variables(self, overrides: dict) -> Variables:
+        self.variables_repo.set_overrides(overrides)
+        return self.variables_repo.effective_variables()
+
+    def get_tshirt_scale(self) -> dict[str, dict[str, float]]:
+        return self.tshirt_repo.effective_scale()
+
+    def get_tshirt_scale_overrides(self) -> dict:
+        return self.tshirt_repo.get_overrides()
+
+    def update_tshirt_scale(self, overrides: dict) -> dict[str, dict[str, float]]:
+        self.tshirt_repo.set_overrides(overrides)
+        return self.tshirt_repo.effective_scale()
 
     def active_rates(self) -> tuple[list[RateRow], str]:
         """The rate rows in effect (from the active card) and a source label."""
@@ -85,6 +113,8 @@ class EstimateService:
             project_name, prd_text, context,
             match_override=match_override, parametric_override=parametric_override, rates=rates,
             context_panel=context_panel, use_llm=use_llm,
+            variables_override=self.get_variables(),
+            tshirt_scale_override=self.get_tshirt_scale(),
         )
         references = find_references(prd_text, context, graph.matched_pattern_ids, past)
         return graph, references

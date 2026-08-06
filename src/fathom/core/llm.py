@@ -392,6 +392,29 @@ def heuristic_classify_kind(text: str, taxonomy: KindTaxonomy) -> dict:
     }
 
 
+# MoSCoW (D32) — deterministic, natural-language signal detection. Vocabulary
+# matches skills/spec-iq's Priority column (Must Have/Should Have/Could Have/
+# Won't Have) so a spec-iq-authored PRD's priority language maps onto the same
+# values Fathom's own Priority column uses. Checked in this order (most decisive
+# signal first) since a sentence could plausibly contain more than one phrase.
+_PRIORITY_SIGNALS: list[tuple[str, re.Pattern]] = [
+    ("must", re.compile(r"\bmust[\s-]have\b|\bcritical\b|\bmandatory\b|\brequired\b", re.IGNORECASE)),
+    ("wont", re.compile(r"\bwon.?t[\s-]have\b|\bout of scope\b|\bnot in (this|the) release\b", re.IGNORECASE)),
+    ("should", re.compile(r"\bshould[\s-]have\b|\bhigh priority\b", re.IGNORECASE)),
+    ("could", re.compile(r"\bcould[\s-]have\b|\bnice[\s-]to[\s-]have\b|\boptional\b", re.IGNORECASE)),
+]
+
+
+def detect_priority(text: str) -> str | None:
+    """Deterministic MoSCoW signal detection — returns "must"/"should"/"could"/
+    "wont" if `text` explicitly says so, else None (no priority language found;
+    the caller leaves WorkItem.priority unset rather than guessing)."""
+    for priority, pattern in _PRIORITY_SIGNALS:
+        if pattern.search(text):
+            return priority
+    return None
+
+
 def group_into_epics(feature_texts: list[str], *, client: LLMClient | None = None) -> list[str]:
     """Assign an epic (a short 2-6 word capability/theme name) to each item in
     `feature_texts`, grouping related items under the same epic. Returns one

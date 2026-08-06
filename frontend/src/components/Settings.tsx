@@ -9,6 +9,7 @@ export function SettingsLayout({ isAdmin }: { isAdmin: boolean }) {
     <div>
       <div className="flex items-center gap-1 border-b border-line mb-4">
         <NavLink to="rates" className={tabClass}>Rates</NavLink>
+        {isAdmin && <NavLink to="variables" className={tabClass}>Variables</NavLink>}
         {isAdmin && <NavLink to="admin" className={tabClass}>Users & accounts</NavLink>}
       </div>
       <Outlet />

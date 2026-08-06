@@ -56,6 +56,144 @@ factor families" but the prose enumerates ~29 depending on how compound entries
 **Why:** Needs the workbook family list to reconcile exactly. FLAGGED to owner.
 Correcting is a data edit. Ref §2.4.
 
+## D35. Owner's t-shirt conversion defaults applied as an override, not a rewrite of the source data
+
+**Call:** The owner gave specific story-point conversion defaults — XS=1,
+S=2-3, M=5, L=8-13, XL=20+ — for the points/t-shirt toggle (D34). First
+attempt edited `data/tshirt_scale.yaml` directly; reverted after
+`tests/test_data_load.py::test_tshirt_scale_matches_spec_2_2` failed, which
+exists specifically to guarantee that file stays a faithful transcription of
+the source workbook (§2.2), the same way `patterns.yaml` etc. are treated as
+verified reference data, not tuning knobs. The correct mechanism was already
+built as part of D34: apply the owner's numbers as an org-wide **override**
+via `persistence/tshirt_scale.py`/`PUT /api/tshirt-scale` (Settings admin
+UI), leaving the committed YAML's verified values untouched. Where a range
+was given, the upper bound is the recommended override value (S=3, L=13);
+XL's "20+" becomes 20. `feature`/`epic` for an overridden size follow the
+same D2 ratio (2.5×/10× story) the base scale uses.
+**Why:** Keeps the source-workbook transcription's test-guaranteed fidelity
+intact while still honoring the owner's stated preference — through the
+override tier the system already has for exactly this purpose, rather than
+quietly changing what "verified reference data" means.
+
+## D34. Estimate by points or t-shirt size, toggled per view; scale is org-wide only
+
+**Call:** Added a `Points`/`T-shirt` toggle to the Estimate grid header
+(`EstimateView.tsx`, local React state, not persisted). In T-shirt mode, a
+row's Pts (R)/O/P inputs are replaced by a single `TShirtSize` select; picking
+a size looks up `{epic,feature,story}` points for that size from the existing
+`tshirt_scale.yaml` matrix (already modeled backend-side per D2, but never
+rendered in the frontend before this) and writes them straight into
+`WorkItem.points` — the same field every other calculation already reads, so
+no downstream math changed. The matrix itself now has an org-wide override
+mechanism (`persistence/tshirt_scale.py::SQLiteTshirtScaleRepository`,
+`GET/PUT /api/tshirt-scale`), mirroring D31's Variables repository, and
+`core/estimation.py::build_estimate()` gained a `tshirt_scale_override` param
+alongside D31's `variables_override`. The picker itself only offers the
+5 standard sizes (XS-XL, `EstimateView.tsx::TSHIRT_SIZES`) — the backend
+matrix still carries the full 9-size XXXS-XXXL range (unchanged, still
+verified per D2/D35), just not all of it is surfaced in this dropdown.
+**Why:** Owner asked for a points/t-shirt toggle backed by "conversion
+variables in settings." Deliberately **single-tier, admin-only** — no
+per-estimate override, unlike Variables (D31) — because the size→points
+mapping is an organizational sizing convention, not a per-deal lever like
+`avg_story_pts` or risk severity; flagged to the owner as a scoping choice to
+correct if a per-estimate version turns out to be wanted too.
+
+## D33. "A story point is a developer day" as an additive, informational stat
+
+**Call:** Added `Variables.days_per_story_point` (default 1.0). Rather than
+feeding it into `core/velocity.py`/`core/montecarlo.py`, the Estimate view
+computes a fourth Stat card client-side — `effort_points` percentiles ×
+`days_per_story_point` — reusing the same `Percentiles`-shaped `range` prop
+the existing Effort/Duration/Cost stats already use. No backend Monte Carlo
+change at all.
+**Why:** Confirmed with the owner directly: the existing sub-linear
+team-velocity model (Brooks-exponent diminishing returns, `team_velocity()`)
+is a deliberate, previously-documented design choice, not something to
+quietly replace with a flat points-to-days conversion. The additive stat
+gets the literal ask ("set a variable that a story point is a developer
+day") without touching that model or its accuracy.
+
+## D32. MoSCoW: label + filter, not a totals-affecting toggle by default
+
+**Call:** Added `WorkItem.priority: "must"|"should"|"could"|"wont" | None`,
+a Priority column in the Estimate grid, and a "Show:" filter — a single
+`<select>` (All priorities / Must Have / Should Have / Could Have / Won't
+Have), not a multi-select chip row (tried first, changed on direct
+feedback: a plain dropdown reads more clearly than free-form multi-toggle
+chips for this one-at-a-time narrowing). Filtering hides non-matching rows
+from the grid **and** from the Total (D2's O/P total-column fix) — a filter
+that kept totaling hidden rows would be confusing — but items with no
+priority set are never hidden regardless of the selected filter, so
+narrowing it can't bury untriaged work. Vocabulary (Must Have/Should
+Have/Could Have/Won't Have)
+matches `skills/spec-iq/generate-prd.js`'s Priority column exactly (see that
+skill's `moscowTable()`), so a spec-iq-authored PRD's priorities read the
+same way here. `core/llm.py::detect_priority()` adds a small, deterministic
+natural-language detector (phrases like "must have"/"nice to have"/"out of
+scope") wired into the decompose-requirements endpoint — not spec-iq-table
+parsing (its Priority column lives in a table cell, not paragraph text the
+existing line-based heuristics operate on; see D27's same scoping call for
+the gap/conflict markers).
+**Why:** Owner confirmed directly: label + filter, not automatic
+total-exclusion by default — marking something "Won't Have" shouldn't
+silently change a number someone might already be relying on; the filter is
+the deliberate, opt-in way to see totals under a narrower scope.
+
+## D31. Two-tier Variables settings: org-wide admin defaults + per-estimate overrides
+
+**Call:** `data/variables.yaml` → `Variables` had no override mechanism at
+all before this (despite `models/variables.py`'s own docstring claiming
+"overrides are applied per estimate") and no settings UI. Built two tiers,
+reusing two different existing patterns rather than inventing one mechanism
+for both:
+- **Tier 1 (org-wide defaults, Admin Settings, admin-only):**
+  `persistence/variables.py::SQLiteVariablesRepository` mirrors the existing
+  rate-card repository shape — a sparse admin-set override dict merged with
+  the YAML defaults fresh on every read. `core/estimation.py::build_estimate()`
+  gained an optional `variables_override` param (same shape as the existing
+  `parametric_override`), defaulting to `None` so every direct test call is
+  unaffected. `GET/PUT /api/variables`, reads open to any authenticated user,
+  writes gated by `require_admin` — same split as `/api/rate-cards*`.
+- **Tier 2 (per-estimate, Shape It tab, anyone who can edit the estimate):**
+  turned out to already be half-built — `core/recompute.py::RecomputeOverrides`
+  already special-cased one field (`avg_story_pts`), copying it onto
+  `graph.variables` and persisting it back through the existing
+  `POST /api/estimates/{id}/recompute`. Generalized that to an arbitrary
+  `variables: dict[str, float]` override, applied via
+  `variables.model_copy(update=...)`, keeping the old `avg_story_pts` field
+  working unchanged alongside it.
+**Why:** Owner corrected an initial single-tier plan directly: org-wide
+defaults belong in Admin Settings, but each estimate needs to tune on top of
+that default for itself, from within the estimate, without an admin gate —
+same footing as the AI Tier/engineer-count levers already in Shape It.
+
+## D30. Risks and Accelerators get a quantified per-entry severity, replacing flat impacts
+
+**Call:** Every Risk entry previously got a hardcoded `impact=-0.3`; every
+Accelerator entry contributed a flat `+0.25` — not user-configurable at all.
+Added `ContextEntry.severity: RiskSeverity | None` (reusing the existing
+`None/Low/Moderate/High/Extreme` ladder already defined for complexity
+factors, `models/enums.py`) and a matching `Variables.accelerator_impact_*`
+ladder alongside the pre-existing `risk_impact_*` one. `core/estimation.py`
+now resolves each entry's chosen (or default-to-Moderate) severity through
+`Variables.risk_impact_for()`/`accelerator_impact_for()` instead of the flat
+literals. A Severity dropdown sits next to each Risk/Accelerator entry's
+existing Scope dropdown in the Context Panel.
+**Why:** Owner asked for risks/accelerators to be quantifiable rather than
+uniform. Defaulting unset severity to Moderate (the old flat value) means no
+existing estimate's number silently changes until someone actually picks a
+different severity. The new accelerator ladder's non-Moderate values
+(Low/High/Extreme) are a first-pass escalating default, not yet calibrated
+against real engagements — flagged provisional, same spirit as D5/D6.
+**Left open:** `core/recompute.py`'s per-estimate recompute path derives its
+complexity impact from `graph.complexity_factors` only — it has no record of
+the accelerator boost applied at build time (accelerators were never turned
+into a persisted `LinkedFactor`, just a scalar folded into the initial
+`cx_impact`). This gap predates D30 and isn't specific to severity being
+quantified now; noted here since it's adjacent, not fixed in this change.
+
 ## D29. Work items get a `reference` field so classified items keep a source link wherever they're routed
 
 **Call:** Added `WorkItem.reference: str | None`, set by the frontend's `toWorkItem()`

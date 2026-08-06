@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from .enums import RiskSeverity
+
 
 class Variables(BaseModel):
     """Workbook VariablesTable + Phases-tab constants."""
@@ -43,3 +45,32 @@ class Variables(BaseModel):
     risk_impact_moderate: float = Field(default=-0.5)
     risk_impact_high: float = Field(default=-0.75)
     risk_impact_extreme: float = Field(default=-1.0)
+
+    # Accelerator impacts (D30) — same ladder shape as risk impacts, positive.
+    accelerator_impact_low: float = Field(default=0.1)
+    accelerator_impact_moderate: float = Field(default=0.25)
+    accelerator_impact_high: float = Field(default=0.4)
+    accelerator_impact_extreme: float = Field(default=0.6)
+
+    # Story-point/day conversion (D33) — additive/informational only.
+    days_per_story_point: float = Field(default=1.0)
+
+    def risk_impact_for(self, severity: RiskSeverity) -> float:
+        """Velocity impact (<= 0) for a Risk entry's chosen severity."""
+        return {
+            RiskSeverity.NONE: 0.0,
+            RiskSeverity.LOW: self.risk_impact_low,
+            RiskSeverity.MODERATE: self.risk_impact_moderate,
+            RiskSeverity.HIGH: self.risk_impact_high,
+            RiskSeverity.EXTREME: self.risk_impact_extreme,
+        }[severity]
+
+    def accelerator_impact_for(self, severity: RiskSeverity) -> float:
+        """Velocity offset (>= 0) for an Accelerator entry's chosen severity."""
+        return {
+            RiskSeverity.NONE: 0.0,
+            RiskSeverity.LOW: self.accelerator_impact_low,
+            RiskSeverity.MODERATE: self.accelerator_impact_moderate,
+            RiskSeverity.HIGH: self.accelerator_impact_high,
+            RiskSeverity.EXTREME: self.accelerator_impact_extreme,
+        }[severity]

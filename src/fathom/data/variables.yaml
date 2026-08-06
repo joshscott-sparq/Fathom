@@ -94,3 +94,31 @@ variables:
   RiskImpactExtreme:
     value: -1.0
     source: "Risks tab / §2.4"
+
+  # --- Accelerator severity impacts ---
+  # Same shape as the risk ladder above but positive (velocity offset, not
+  # penalty). Only "Moderate" is a verified value (it matches the flat 0.25
+  # every Accelerator entry contributed before per-entry severity existed);
+  # Low/High/Extreme are a first-pass escalating default, not yet calibrated
+  # against real engagements. See DECISIONS.md D30.
+  AcceleratorImpactLow:
+    value: 0.1
+    source: "provisional-pending-calibration"
+  AcceleratorImpactModerate:
+    value: 0.25
+    source: "matches pre-D30 flat accelerator boost"
+  AcceleratorImpactHigh:
+    value: 0.4
+    source: "provisional-pending-calibration"
+  AcceleratorImpactExtreme:
+    value: 0.6
+    source: "provisional-pending-calibration"
+
+  # --- Story-point/day conversion (§5, D33) ---
+  # Additive, informational: how many developer-days one story point implies.
+  # Does not feed velocity/cost math (see DECISIONS.md D33) — surfaced as an
+  # extra derived stat alongside the existing sprint-velocity Duration figure.
+  DaysPerStoryPoint:
+    value: 1.0
+    source: "D33"
+    note: "1 story point = 1 developer day, by default."

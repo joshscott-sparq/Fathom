@@ -172,6 +172,25 @@ any Context Panel field, discards the hand-edit the same way `pinned_work_items`
 was built to avoid — not solved by D26, since those edits don't have a taxonomy
 kind to route through this same mechanism.
 
+### Quantified Risks/Accelerators, two-tier Variables, MoSCoW, and points/t-shirt
+
+Risk and Accelerator entries carry a `severity` (`RiskSeverity`, reused from the
+complexity-factor ladder) resolved through `Variables.risk_impact_for()`/
+`accelerator_impact_for()` instead of the flat impacts every entry used to get —
+D30. `Variables` itself is now overridable at two tiers: org-wide defaults in
+Admin Settings (`persistence/variables.py`, `GET/PUT /api/variables`,
+admin-write) and per-estimate tweaks in an estimate's own Shape It tab
+(`core/recompute.py::RecomputeOverrides.variables`, applied via the existing
+`POST /api/estimates/{id}/recompute`) — D31. `WorkItem.priority` is a
+label-only MoSCoW field (vocabulary matched to `skills/spec-iq`'s Priority
+column) with a filter that narrows the grid and its totals — D32.
+`Variables.days_per_story_point` powers an additive "developer-days" stat
+without touching the sub-linear team-velocity model — D33. The Estimate
+grid's Points/T-shirt toggle writes t-shirt-derived points into the same
+`WorkItem.points` field everything else already reads, backed by an
+org-wide-only (no per-estimate tier) override of `tshirt_scale.yaml` —
+D34.
+
 ### Auth, domain model, persistence
 
 Domain: `Account → Opportunity → Estimate` (one active/official estimate per

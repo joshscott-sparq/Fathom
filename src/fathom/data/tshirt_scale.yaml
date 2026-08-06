@@ -2,6 +2,12 @@
 # Source: Project_Estimation_Tool_Template_v1.xlsx, ResourceLookups!A62:D71 (spec §2.2).
 # Values are already story-point-scaled: Feature = 2.5 stories, Epic = 10 stories
 # of the same size (e.g. M: Story 5, Feature 12.5, Epic 50). See DECISIONS.md D2.
+#
+# This file is a verified transcription of the source workbook (see
+# tests/test_data_load.py::test_tshirt_scale_matches_spec_2_2) — not the place
+# for calibration tweaks. The owner's conversion-default preferences (D35) are
+# applied as an admin override via persistence/tshirt_scale.py instead (Settings
+# > Variables, or GET/PUT /api/tshirt-scale), same as any other org-wide tuning.
 version: "1.0.0"
 source: "ResourceLookups!A62:D71"
 sizes:

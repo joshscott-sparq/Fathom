@@ -400,6 +400,8 @@ def build_estimate(
     use_llm: bool | None = None,
     llm_client=None,
     context_panel=None,
+    variables_override: "Variables | None" = None,
+    tshirt_scale_override: dict[str, dict[str, float]] | None = None,
 ) -> SolutionGraph:
     """Build and estimate a Solution Graph from a PRD + client context.
 
@@ -407,15 +409,25 @@ def build_estimate(
     matching, and capability derivation use Claude; each step falls back to a
     deterministic heuristic on absence or error, so the engine always runs.
     `use_llm` forces the choice; None auto-detects. `llm_client` is injectable
-    for testing.
+    for testing. `variables_override`, when given, is used in place of the
+    YAML defaults (D31's org-wide Variables settings tier) — callers that don't
+    pass one get the plain `data_loader.load_variables()` defaults, unchanged
+    from before D31. `tshirt_scale_override` is the equivalent for the size
+    matrix (D34) — same shape as `data_loader.load_tshirt_scale()`'s return.
     """
     context = context or ClientContext()
     from . import llm
 
     use_llm = llm.available() if use_llm is None else use_llm
 
-    feature_points, tshirt_v = data_loader.load_tshirt_scale()
-    variables, vars_v = data_loader.load_variables()
+    if tshirt_scale_override is not None:
+        feature_points, tshirt_v = tshirt_scale_override, "override"
+    else:
+        feature_points, tshirt_v = data_loader.load_tshirt_scale()
+    if variables_override is not None:
+        variables, vars_v = variables_override, "override"
+    else:
+        variables, vars_v = data_loader.load_variables()
     patterns, patterns_v = data_loader.load_patterns()
     if rates is None:
         rates, pricing_v, _ = data_loader.load_pricing()
@@ -461,13 +473,17 @@ def build_estimate(
 
         for e in context_panel.risks:
             if e.content.strip():
+                severity = e.severity or RiskSeverity.MODERATE
                 factors.append(LinkedFactor(
-                    family=f"Risk: {e.content.strip()[:48]}", severity=RiskSeverity.MODERATE,
-                    scope=FactorScope.PROJECT, impact=-0.3, is_risk=True))
+                    family=f"Risk: {e.content.strip()[:48]}", severity=severity,
+                    scope=FactorScope.PROJECT, impact=variables.risk_impact_for(severity), is_risk=True))
         for e in context_panel.assumptions:
             if e.content.strip():
                 assumptions.append(f"Assumption: {e.content.strip()[:160]}")
-        accel_boost = 0.25 * sum(1 for e in context_panel.accelerators if e.content.strip())
+        accel_boost = sum(
+            variables.accelerator_impact_for(e.severity or RiskSeverity.MODERATE)
+            for e in context_panel.accelerators if e.content.strip()
+        )
 
     cx_impact = complexity_impact(factors, variables.avg_story_pts)
     # Accelerators offset the complexity penalty (capped so velocity stays sane).

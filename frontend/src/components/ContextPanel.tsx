@@ -23,12 +23,13 @@ const TAB_BY_TAXONOMY_KIND: Record<string, "risks" | "assumptions" | "accelerato
 // name distinct from the full sentence; the full sentence becomes `notes` so
 // dropping detail into a terse grid cell doesn't lose it.
 function toWorkItem(
-  d: { text: string; title: string; epic: string; taxonomy_kind: string; taxonomy_confidence: number },
+  d: { text: string; title: string; epic: string; taxonomy_kind: string; taxonomy_confidence: number; priority?: "must" | "should" | "could" | "wont" | null },
   reference: string,
 ): WorkItem {
   const base = {
     id: wiUid(), parent_id: null, phase_id: null,
     points: { realistic: 0 }, practice: null, notes: d.text, reference,
+    priority: d.priority ?? null,
     cure: DEFAULT_CURE, extraction_confidence: d.taxonomy_confidence,
   };
   if (d.taxonomy_kind === "epic") return { ...base, level: "epic", epic: d.title, feature: null, story: null };
@@ -55,14 +56,16 @@ function groupDuplicates(entries: ContextEntry[]): ContextEntry[] {
 }
 
 const ENTRY_TABS = [
-  { key: "requirements", label: "Requirements", scoped: false, hint: "What's being built — a PRD, feature list, or notes." },
-  { key: "phases", label: "Phases", scoped: false, hint: "Stages of the effort (Discovery, MVP, V1)." },
-  { key: "risks", label: "Risks", scoped: true, hint: "Facts that could slow the effort down — plus the complexity factors they (and other context) derive." },
-  { key: "accelerators", label: "Accelerators", scoped: true, hint: "Facts that speed the effort up." },
-  { key: "assumptions", label: "Assumptions", scoped: true, hint: "Things the estimate assumes to be true." },
-  { key: "reference", label: "Reference Estimates", scoped: false, hint: "Similar past estimates surfaced from memory." },
-  { key: "external", label: "External Sources", scoped: false, hint: "Live systems feeding context." },
+  { key: "requirements", label: "Requirements", scoped: false, quantified: false, hint: "What's being built — a PRD, feature list, or notes." },
+  { key: "phases", label: "Phases", scoped: false, quantified: false, hint: "Stages of the effort (Discovery, MVP, V1)." },
+  { key: "risks", label: "Risks", scoped: true, quantified: true, hint: "Facts that could slow the effort down — plus the complexity factors they (and other context) derive." },
+  { key: "accelerators", label: "Accelerators", scoped: true, quantified: true, hint: "Facts that speed the effort up." },
+  { key: "assumptions", label: "Assumptions", scoped: true, quantified: false, hint: "Things the estimate assumes to be true." },
+  { key: "reference", label: "Reference Estimates", scoped: false, quantified: false, hint: "Similar past estimates surfaced from memory." },
+  { key: "external", label: "External Sources", scoped: false, quantified: false, hint: "Live systems feeding context." },
 ] as const;
+
+const SEVERITIES = ["None", "Low", "Moderate", "High", "Extreme"] as const;
 
 type TabKey = (typeof ENTRY_TABS)[number]["key"];
 const LIST_TABS: TabKey[] = ["requirements", "risks", "accelerators", "assumptions"];
@@ -135,6 +138,9 @@ export function ContextPanel({ estimateId, initial, references, complexityFactor
   function setScope(key: Exclude<TabKey, "phases" | "external" | "reference">, id: string, scope: string) {
     setPanel((p) => ({ ...p, [key]: (p[key] as ContextEntry[]).map((x) => x.id === id ? { ...x, scope } : x) }));
   }
+  function setSeverity(key: Exclude<TabKey, "phases" | "external" | "reference">, id: string, severity: string) {
+    setPanel((p) => ({ ...p, [key]: (p[key] as ContextEntry[]).map((x) => x.id === id ? { ...x, severity: severity || null } : x) }));
+  }
   function editContent(key: Exclude<TabKey, "phases" | "external" | "reference">, id: string, content: string) {
     setPanel((p) => ({ ...p, [key]: (p[key] as ContextEntry[]).map((x) => x.id === id ? { ...x, content } : x) }));
   }
@@ -174,10 +180,11 @@ export function ContextPanel({ estimateId, initial, references, complexityFactor
                 tabKey={tab as Exclude<TabKey, "phases" | "external" | "reference">}
                 entries={panel[tab as "requirements"] as ContextEntry[]}
                 scoped={ENTRY_TABS.find((t) => t.key === tab)!.scoped}
+                quantified={ENTRY_TABS.find((t) => t.key === tab)!.quantified}
                 hint={ENTRY_TABS.find((t) => t.key === tab)!.hint}
                 phases={panel.phases}
                 canEdit={canEdit}
-                onAdd={addEntry} onRemove={removeEntry} onScope={setScope} onEdit={editContent}
+                onAdd={addEntry} onRemove={removeEntry} onScope={setScope} onSeverity={setSeverity} onEdit={editContent}
                 complexityFactors={tab === "risks" ? complexityFactors : undefined}
                 onQueueWorkItems={tab === "requirements" ? queueWorkItems : undefined}
               />
@@ -227,7 +234,7 @@ function sourceLabel(e: ContextEntry): string {
   return dot > 0 ? e.reference.slice(dot + 1).toUpperCase() : e.source_type;
 }
 
-function EntryTab({ tabKey, entries, scoped, hint, phases, canEdit, onAdd, onRemove, onScope, onEdit, complexityFactors, onQueueWorkItems }: any) {
+function EntryTab({ tabKey, entries, scoped, quantified, hint, phases, canEdit, onAdd, onRemove, onScope, onSeverity, onEdit, complexityFactors, onQueueWorkItems }: any) {
   const [text, setText] = useState("");
   const [url, setUrl] = useState("");
   const [urlMode, setUrlMode] = useState(false);
@@ -400,6 +407,7 @@ function EntryTab({ tabKey, entries, scoped, hint, phases, canEdit, onAdd, onRem
                 <th className="text-left py-1.5 px-2.5 border-b border-line uppercase text-[11px] w-40">Source</th>
                 <th className="text-left py-1.5 px-2.5 border-b border-line uppercase text-[11px]">{tabKey === "requirements" ? "Content Summary" : "Content"}</th>
                 {scoped && <th className="text-left py-1.5 px-2.5 border-b border-line uppercase text-[11px] w-40">Scope</th>}
+                {quantified && <th className="text-left py-1.5 px-2.5 border-b border-line uppercase text-[11px] w-32">Severity</th>}
                 <th className="w-8"></th>
               </tr>
             </thead>
@@ -430,6 +438,13 @@ function EntryTab({ tabKey, entries, scoped, hint, phases, canEdit, onAdd, onRem
                       <select className="field !w-full !py-1 text-[12px]" value={e.scope} onChange={(ev) => onScope(tabKey, e.id, ev.target.value)} disabled={!canEdit}>
                         <option value="estimate">Entire estimate</option>
                         {phases.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                      </select>
+                    </td>
+                  )}
+                  {quantified && (
+                    <td className="py-1.5 px-2.5">
+                      <select className="field !w-full !py-1 text-[12px]" value={e.severity ?? "Moderate"} onChange={(ev) => onSeverity(tabKey, e.id, ev.target.value)} disabled={!canEdit} title="How much this factor should move the estimate">
+                        {SEVERITIES.map((s) => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </td>
                   )}

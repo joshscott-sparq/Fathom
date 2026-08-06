@@ -8,6 +8,7 @@ import { NewEstimate } from "./components/NewEstimate";
 import { EstimatePage } from "./components/EstimatePage";
 import { EstimatesList } from "./components/EstimatesList";
 import { RatesView } from "./components/RatesView";
+import { VariablesView } from "./components/VariablesView";
 import { AdminView } from "./components/AdminView";
 import { SettingsLayout } from "./components/Settings";
 import { OpportunityView } from "./components/OpportunityView";
@@ -138,6 +139,7 @@ export default function App() {
             <Route path="/settings" element={<SettingsLayout isAdmin={isAdmin} />}>
               <Route index element={<Navigate to="rates" replace />} />
               <Route path="rates" element={<RatesView />} />
+              {isAdmin && <Route path="variables" element={<VariablesView />} />}
               {isAdmin && <Route path="admin" element={<AdminView />} />}
             </Route>
           )}

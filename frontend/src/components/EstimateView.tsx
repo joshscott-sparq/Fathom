@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from "react";
 import { api } from "../api";
-import type { AiTier, DeferralSuggestion, EstimateResponse, Percentiles, TeamSuggestion, WorkItem } from "../types";
+import type { AiTier, DeferralSuggestion, EstimateResponse, Percentiles, TeamSuggestion, Variables, WorkItem } from "../types";
 import { MermaidDiagram } from "./MermaidDiagram";
 import { Section } from "./Section";
 import { ShareControls } from "./ShareControls";
@@ -18,10 +18,25 @@ const money = (n: number) =>
 // Dummy Salesforce link — real org/instance wiring is a later integration step.
 const sfUrl = (kind: "Account" | "Opportunity", sfId: string) => `https://sparq.my.salesforce.com/lightning/r/${kind}/${sfId}/view`;
 const pts = (n: number) => `${Math.round(n)} pts`;
+const days = (n: number) => `${Math.round(n)} days`;
 const fmtPts = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
 
 const TH = "text-left py-1.5 px-2 border-b border-line uppercase text-[12px]";
 const TD = "py-1.5 px-2 border-b border-line";
+
+// MoSCoW (D32) — vocabulary matches skills/spec-iq's Priority column exactly
+// (Must Have/Should Have/Could Have/Won't Have) so a spec-iq-authored PRD's
+// priorities read the same way here.
+// Owner asked to keep the picker to the standard 5-size range (XS-XL) even
+// though the backend scale supports finer XXXS/XXS/XXL/XXXL steps too.
+const TSHIRT_SIZES = ["XS", "S", "M", "L", "XL"] as const;
+
+const PRIORITY_OPTIONS: { key: "must" | "should" | "could" | "wont"; label: string }[] = [
+  { key: "must", label: "Must Have" },
+  { key: "should", label: "Should Have" },
+  { key: "could", label: "Could Have" },
+  { key: "wont", label: "Won't Have" },
+];
 
 function Stat({ label, value, sub, range, fmt }: { label: string; value: string; sub?: string; range?: Percentiles; fmt?: (n: number) => string }) {
   return (
@@ -71,8 +86,11 @@ export function EstimateView({ initial, canEdit = true, canComment = true, canCl
   const [tierKey, setTierKey] = useState<string | null>(null);
   const [engineers, setEngineers] = useState(est.graph.team_plan.roles.filter((r) => r.discipline !== "Project & Program Management").length || 3);
   const [practices, setPractices] = useState<string[]>([]);
+  const [sizeMode, setSizeMode] = useState<"points" | "tshirt">("points");
+  const [tshirtScale, setTshirtScale] = useState<Record<string, Record<string, number>>>({});
 
   useEffect(() => { api.getRates().then((r) => setPractices(r.practices)).catch(() => {}); }, []);
+  useEffect(() => { api.getTshirtScale().then((r) => setTshirtScale(r.sizes)).catch(() => {}); }, []);
 
   useEffect(() => {
     api.listAiTiers().then((ts) => {
@@ -91,6 +109,7 @@ export function EstimateView({ initial, canEdit = true, canComment = true, canCl
   const [items, setItems] = useState<WorkItem[]>(est.graph.work_items);
   const [savingItems, setSavingItems] = useState(false);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  const [priorityFilter, setPriorityFilter] = useState<"all" | "must" | "should" | "could" | "wont">("all");
 
   function toggleExpanded(id: string) {
     setExpandedItems((prev) => {
@@ -107,6 +126,23 @@ export function EstimateView({ initial, canEdit = true, canComment = true, canCl
     skipNextItemsSave.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [est.estimate_id, est.version]);
+
+  // Per-estimate variable overrides (D31 tier 2) — dirty edits not yet saved.
+  // Reset whenever a new estimate/version loads, same as `items` above.
+  const [varDirty, setVarDirty] = useState<Partial<Variables>>({});
+  useEffect(() => { setVarDirty({}); }, [est.estimate_id, est.version]);
+  const varValues: Variables | undefined = est.graph.variables ? { ...est.graph.variables, ...varDirty } : undefined;
+  function setVarField(key: keyof Variables, raw: string) {
+    const n = parseFloat(raw);
+    if (Number.isNaN(n)) return;
+    setVarDirty((d) => ({ ...d, [key]: n }));
+  }
+  async function saveVariables() {
+    if (Object.keys(varDirty).length === 0) return;
+    setBusy("knobs");
+    try { setEst(await api.recompute(est.estimate_id, { variables: varDirty })); }
+    finally { setBusy(null); }
+  }
 
   // Debounced auto-save, mirroring the Context Panel's auto-recalc: edits here
   // are direct hand-edits to the work breakdown, not context to regenerate it.
@@ -128,6 +164,12 @@ export function EstimateView({ initial, canEdit = true, canComment = true, canCl
   const rec = g.reconciliation;
   const scenarios = g.scenarios ?? [];
   const phases = g.context_panel?.phases ?? [];
+  // Additive derived stat (D33) — informational only, doesn't feed the
+  // sprint-velocity model. Days/point is a per-estimate-or-global Variable.
+  const dps = g.variables?.days_per_story_point ?? 1;
+  const devDays: Percentiles | undefined = mc
+    ? { p10: mc.effort_points.p10 * dps, p50: mc.effort_points.p50 * dps, p80: mc.effort_points.p80 * dps, p90: mc.effort_points.p90 * dps }
+    : undefined;
 
   function updateItem(id: string, patch: Partial<WorkItem>) {
     setItems((prev) => prev.map((it) => it.id === id ? { ...it, ...patch } : it));
@@ -200,10 +242,11 @@ export function EstimateView({ initial, canEdit = true, canComment = true, canCl
 
       <TagBar tags={g.tags ?? []} canEdit={canEdit} onChange={setTags} />
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-1">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-1">
         <Stat label="Effort" value={mc ? pts(mc.effort_points.p50) : "—"} range={mc?.effort_points} fmt={pts} />
         <Stat label="Duration" value={mc ? mc.duration_sprints.p50.toFixed(1) : "—"} sub="sprints" range={mc?.duration_sprints} fmt={(n) => `${n.toFixed(1)} spr`} />
         {!oralsMode && <Stat label="Cost" value={mc ? money(mc.cost.p50) : "—"} range={mc?.cost} fmt={money} />}
+        <Stat label="Developer-days" value={devDays ? days(devDays.p50) : "—"} sub={`@ ${dps} day${dps === 1 ? "" : "s"}/pt`} range={devDays} fmt={days} />
       </div>
       <p className="text-muted text-[11px] mt-1 mb-5">
         Each number is the P50 (median) from the Monte Carlo simulation — the point where half of simulated
@@ -241,20 +284,50 @@ export function EstimateView({ initial, canEdit = true, canComment = true, canCl
           )}
 
           {(items.length > 0 || canEdit) && (() => {
-            const parentIds = new Set(items.map((w) => w.parent_id).filter(Boolean));
-            const total = items.filter((w) => !parentIds.has(w.id)).reduce((sum, w) => sum + w.points.realistic, 0);
+            // Priority filter (D32): items with no priority set are never hidden —
+            // narrowing the filter is meant to focus on triaged work, not bury
+            // anything that hasn't been triaged yet.
+            const visibleItems = items.filter((w) => priorityFilter === "all" || !w.priority || w.priority === priorityFilter);
+            const parentIds = new Set(visibleItems.map((w) => w.parent_id).filter(Boolean));
+            const totalable = visibleItems.filter((w) => !parentIds.has(w.id));
+            const total = totalable.reduce((sum, w) => sum + w.points.realistic, 0);
+            const totalO = totalable.reduce((sum, w) => sum + (w.points.optimistic ?? w.points.realistic), 0);
+            const totalP = totalable.reduce((sum, w) => sum + (w.points.pessimistic ?? w.points.realistic), 0);
             return (
               <Section title={<>Estimate <span className="normal-case tracking-normal text-muted">(work breakdown)</span></>}
-                actions={savingItems ? <span className="text-muted text-[12px] inline-flex items-center gap-1.5 fade-in"><Spinner /> Saving…</span> : undefined}>
+                actions={
+                  <div className="flex items-center gap-2">
+                    <div className="flex rounded-lg border border-line overflow-hidden text-[12px] font-medium">
+                      {(["points", "tshirt"] as const).map((m) => (
+                        <button key={m} className={"px-2.5 py-1 " + (sizeMode === m ? "bg-brand-green text-white" : "text-muted hover:text-ink")}
+                          onClick={() => setSizeMode(m)}>
+                          {m === "points" ? "Points" : "T-shirt"}
+                        </button>
+                      ))}
+                    </div>
+                    {savingItems && <span className="text-muted text-[12px] inline-flex items-center gap-1.5 fade-in"><Spinner /> Saving…</span>}
+                  </div>
+                }>
                 <p className="text-muted text-[12px] mt-0 mb-2">
                   Estimate at the Epic, Feature, or Story level — the blank cells follow the same convention as the
                   legacy workbook. Link a row to a Phase to place it on the timeline.
                 </p>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <span className="text-muted text-[11px] uppercase mr-1">Show:</span>
+                  <select className="field !w-40 !py-1 text-[12px]" value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value as typeof priorityFilter)}>
+                    <option value="all">All priorities</option>
+                    {PRIORITY_OPTIONS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
+                  </select>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse text-[13px]">
-                    <thead><tr className="text-muted"><th className={TH}></th><th className={TH}>Level</th><th className={TH}>Epic</th><th className={TH}>Feature</th><th className={TH}>Story</th><th className={TH}>Pts (R)</th><th className={TH}>O</th><th className={TH}>P</th><th className={TH}>Phase</th><th className={TH}>Practice</th>{canEdit && <th className={TH}></th>}</tr></thead>
+                    <thead><tr className="text-muted"><th className={TH}></th><th className={TH}>Level</th><th className={TH}>Epic</th><th className={TH}>Feature</th><th className={TH}>Story</th>
+                      {sizeMode === "points"
+                        ? <><th className={TH}>Pts (R)</th><th className={TH}>O</th><th className={TH}>P</th></>
+                        : <th className={TH} colSpan={3}>T-shirt</th>}
+                      <th className={TH}>Phase</th><th className={TH}>Practice</th><th className={TH}>Priority</th>{canEdit && <th className={TH}></th>}</tr></thead>
                     <tbody>
-                      {items.map((wi) => (
+                      {visibleItems.map((wi) => (
                         <Fragment key={wi.id}>
                         <tr>
                           <td className={TD + " text-center"}>
@@ -291,21 +364,40 @@ export function EstimateView({ initial, canEdit = true, canComment = true, canCl
                               ? (wi.level === "story" && <input className="field !w-40 !py-1 text-[12px]" value={wi.story ?? ""} onChange={(e) => updateItem(wi.id, { story: e.target.value })} />)
                               : (wi.story ?? "")}
                           </td>
-                          <td className={TD}>
-                            {canEdit
-                              ? <input type="number" className="field !w-16 !py-1 !px-2 text-[12px]" value={wi.points.realistic} onChange={(e) => updateItem(wi.id, { points: { ...wi.points, realistic: parseFloat(e.target.value) || 0 } })} />
-                              : fmtPts(wi.points.realistic)}
-                          </td>
-                          <td className={TD + " text-muted"}>
-                            {canEdit
-                              ? <input type="number" className="field !w-16 !py-1 !px-2 text-[12px]" value={wi.points.optimistic ?? ""} placeholder={fmtPts(wi.points.realistic)} onChange={(e) => updateItem(wi.id, { points: { ...wi.points, optimistic: e.target.value === "" ? null : parseFloat(e.target.value) } })} />
-                              : fmtPts(wi.points.optimistic ?? wi.points.realistic)}
-                          </td>
-                          <td className={TD + " text-muted"}>
-                            {canEdit
-                              ? <input type="number" className="field !w-16 !py-1 !px-2 text-[12px]" value={wi.points.pessimistic ?? ""} placeholder={fmtPts(wi.points.realistic)} onChange={(e) => updateItem(wi.id, { points: { ...wi.points, pessimistic: e.target.value === "" ? null : parseFloat(e.target.value) } })} />
-                              : fmtPts(wi.points.pessimistic ?? wi.points.realistic)}
-                          </td>
+                          {sizeMode === "points" ? (
+                            <>
+                              <td className={TD}>
+                                {canEdit
+                                  ? <input type="number" className="field !w-16 !py-1 !px-2 text-[12px]" value={wi.points.realistic} onChange={(e) => updateItem(wi.id, { points: { ...wi.points, realistic: parseFloat(e.target.value) || 0 } })} />
+                                  : fmtPts(wi.points.realistic)}
+                              </td>
+                              <td className={TD + " text-muted"}>
+                                {canEdit
+                                  ? <input type="number" className="field !w-16 !py-1 !px-2 text-[12px]" value={wi.points.optimistic ?? ""} placeholder={fmtPts(wi.points.realistic)} onChange={(e) => updateItem(wi.id, { points: { ...wi.points, optimistic: e.target.value === "" ? null : parseFloat(e.target.value) } })} />
+                                  : fmtPts(wi.points.optimistic ?? wi.points.realistic)}
+                              </td>
+                              <td className={TD + " text-muted"}>
+                                {canEdit
+                                  ? <input type="number" className="field !w-16 !py-1 !px-2 text-[12px]" value={wi.points.pessimistic ?? ""} placeholder={fmtPts(wi.points.realistic)} onChange={(e) => updateItem(wi.id, { points: { ...wi.points, pessimistic: e.target.value === "" ? null : parseFloat(e.target.value) } })} />
+                                  : fmtPts(wi.points.pessimistic ?? wi.points.realistic)}
+                              </td>
+                            </>
+                          ) : (
+                            <td className={TD} colSpan={3}>
+                              {canEdit ? (
+                                <select className="field !w-24 !py-1 text-[12px]" value={wi.tshirt ?? ""}
+                                  onChange={(e) => {
+                                    const size = e.target.value;
+                                    const levels = tshirtScale[size];
+                                    const realistic = levels ? (levels[wi.level] ?? wi.points.realistic) : wi.points.realistic;
+                                    updateItem(wi.id, { tshirt: (size || null) as WorkItem["tshirt"], points: { realistic, optimistic: null, pessimistic: null } });
+                                  }}>
+                                  <option value="">—</option>
+                                  {TSHIRT_SIZES.filter((size) => size in tshirtScale).map((size) => <option key={size} value={size}>{size}</option>)}
+                                </select>
+                              ) : (wi.tshirt ?? "—")}
+                            </td>
+                          )}
                           <td className={TD}>
                             {canEdit ? (
                               <select className="field !w-36 !py-1 text-[12px]" value={wi.phase_id ?? ""} onChange={(e) => updateItem(wi.id, { phase_id: e.target.value || null })}>
@@ -323,6 +415,14 @@ export function EstimateView({ initial, canEdit = true, canComment = true, canCl
                               </select>
                             ) : (wi.practice ?? "—")}
                           </td>
+                          <td className={TD + " text-muted"}>
+                            {canEdit ? (
+                              <select className="field !w-32 !py-1 text-[12px]" value={wi.priority ?? ""} onChange={(e) => updateItem(wi.id, { priority: (e.target.value || null) as WorkItem["priority"] })}>
+                                <option value="">—</option>
+                                {PRIORITY_OPTIONS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
+                              </select>
+                            ) : (PRIORITY_OPTIONS.find((p) => p.key === wi.priority)?.label ?? "—")}
+                          </td>
                           {canEdit && (
                             <td className={TD + " text-center whitespace-nowrap"}>
                               <button className="text-muted hover:text-ink mr-1.5" title="Duplicate row" onClick={() => duplicateItem(wi.id)}>⧉</button>
@@ -332,7 +432,7 @@ export function EstimateView({ initial, canEdit = true, canComment = true, canCl
                         </tr>
                         {expandedItems.has(wi.id) && (
                           <tr>
-                            <td className={TD} colSpan={10 + (canEdit ? 1 : 0)}>
+                            <td className={TD} colSpan={11 + (canEdit ? 1 : 0)}>
                               <label className="text-muted text-[11px] uppercase block mb-1">Notes</label>
                               <textarea
                                 className="w-full bg-transparent resize-none outline-none text-[13px] px-1.5 py-1 rounded border border-line focus:border-brand-orange/60 min-h-[60px]"
@@ -353,7 +453,7 @@ export function EstimateView({ initial, canEdit = true, canComment = true, canCl
                       ))}
                     </tbody>
                     <tfoot>
-                      <tr className="font-semibold"><td className={TD}></td><td className={TD} colSpan={4}>Total</td><td className={TD}>{pts(total)}</td><td className={TD}></td><td className={TD}></td><td className={TD}></td><td className={TD}></td>{canEdit && <td className={TD}></td>}</tr>
+                      <tr className="font-semibold"><td className={TD}></td><td className={TD} colSpan={4}>Total</td><td className={TD}>{pts(total)}</td><td className={TD}>{pts(totalO)}</td><td className={TD}>{pts(totalP)}</td><td className={TD}></td><td className={TD}></td><td className={TD}></td>{canEdit && <td className={TD}></td>}</tr>
                     </tfoot>
                   </table>
                 </div>
@@ -412,6 +512,36 @@ export function EstimateView({ initial, canEdit = true, canComment = true, canCl
               </div>
               <button className="btn w-full mt-1 inline-flex items-center justify-center gap-1.5" onClick={recost} disabled={busy !== null}>{busy === "recost" ? <><Spinner /> Re-costing…</> : "Re-cost with active rates"}</button>
               {busy === "knobs" && <div className="text-muted text-sm mt-2 flex items-center gap-1.5 fade-in"><Spinner /> Recomputing…</div>}
+            </Section>
+          )}
+
+          {subTab === "shape" && !readOnly && varValues && (
+            <Section title="Estimate variables" expandable={false}
+              actions={<button className="btn text-[13px] inline-flex items-center gap-1.5" disabled={Object.keys(varDirty).length === 0 || busy !== null} onClick={saveVariables}>{busy === "knobs" ? <><Spinner /> Applying…</> : "Apply to this estimate"}</button>}>
+              <p className="text-muted text-[12px] mt-0 mb-2">
+                Tune this estimate's own velocity/impact assumptions without changing the org-wide defaults
+                (Settings › Variables). Held fixed at whatever's set here until changed again.
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 text-[13px]">
+                {([
+                  ["avg_story_pts", "Avg. story pts / eng / sprint"],
+                  ["days_per_story_point", "Days per story point"],
+                  ["risk_impact_low", "Risk impact — Low"],
+                  ["risk_impact_moderate", "Risk impact — Moderate"],
+                  ["risk_impact_high", "Risk impact — High"],
+                  ["risk_impact_extreme", "Risk impact — Extreme"],
+                  ["accelerator_impact_low", "Accelerator impact — Low"],
+                  ["accelerator_impact_moderate", "Accelerator impact — Moderate"],
+                  ["accelerator_impact_high", "Accelerator impact — High"],
+                  ["accelerator_impact_extreme", "Accelerator impact — Extreme"],
+                ] as [keyof Variables, string][]).map(([key, label]) => (
+                  <div key={key} className="flex items-center justify-between gap-2">
+                    <label className="text-muted">{label}</label>
+                    <input type="number" step={0.05} className="field !w-20 !py-1 !px-1.5 text-[12px]"
+                      value={varValues[key] as number} onChange={(e) => setVarField(key, e.target.value)} />
+                  </div>
+                ))}
+              </div>
             </Section>
           )}
 

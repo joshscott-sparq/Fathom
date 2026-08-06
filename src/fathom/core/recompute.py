@@ -31,6 +31,14 @@ class RecomputeOverrides(BaseModel):
     allocations: dict[str, float] | None = Field(
         default=None, description="discipline -> allocated headcount override."
     )
+    variables: dict[str, float] | None = Field(
+        default=None,
+        description="Arbitrary Variables field overrides (D31 tier 2, per-estimate) — "
+        "name -> value, applied on top of this estimate's current graph.variables and "
+        "persisted onto this estimate only. Org-wide defaults (D31 tier 1, Admin "
+        "Settings) are unaffected. Takes precedence over `avg_story_pts` above if both "
+        "set that same field.",
+    )
 
 
 def recompute(graph: SolutionGraph, overrides: RecomputeOverrides, iterations: int = 10_000) -> SolutionGraph:
@@ -38,6 +46,8 @@ def recompute(graph: SolutionGraph, overrides: RecomputeOverrides, iterations: i
     variables = graph.variables.model_copy()
     if overrides.avg_story_pts is not None:
         variables.avg_story_pts = overrides.avg_story_pts
+    if overrides.variables:
+        variables = variables.model_copy(update=overrides.variables)
 
     # Apply per-discipline allocation overrides first.
     team = graph.team_plan.model_copy(deep=True)

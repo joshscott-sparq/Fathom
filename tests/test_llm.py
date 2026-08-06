@@ -253,6 +253,18 @@ def test_heuristic_classify_kind_routes_spec_iq_flags():
     assert conflict["kind"] == "risk"
 
 
+def test_detect_priority_matches_moscow_signals():
+    cases = {
+        "This is a must have for launch.": "must",
+        "This should have this by Q3.": "should",
+        "This would be a nice-to-have.": "could",
+        "This is out of scope for now.": "wont",
+        "No signal here at all.": None,
+    }
+    for text, expected in cases.items():
+        assert llm.detect_priority(text) == expected, text
+
+
 def test_group_into_epics_uses_llm_clustering():
     class FakeEpicLLM:
         def complete_json(self, system, user, *, max_tokens=4000):

@@ -44,6 +44,11 @@ _VARIABLE_FIELD_MAP = {
     "RiskImpactModerate": "risk_impact_moderate",
     "RiskImpactHigh": "risk_impact_high",
     "RiskImpactExtreme": "risk_impact_extreme",
+    "AcceleratorImpactLow": "accelerator_impact_low",
+    "AcceleratorImpactModerate": "accelerator_impact_moderate",
+    "AcceleratorImpactHigh": "accelerator_impact_high",
+    "AcceleratorImpactExtreme": "accelerator_impact_extreme",
+    "DaysPerStoryPoint": "days_per_story_point",
 }
 
 

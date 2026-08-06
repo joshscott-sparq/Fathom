@@ -1,4 +1,4 @@
-import type { AiTier, EstimateResponse, EstimateSummary, Graph, Pattern } from "./types";
+import type { AiTier, EstimateResponse, EstimateSummary, Graph, Pattern, Variables } from "./types";
 
 // --- Token store (bearer, persisted) ---
 const TOKEN_KEY = "aiq_token";
@@ -89,7 +89,7 @@ export const api = {
   saveContext: (id: string, panel: import("./types").ContextPanel) =>
     http<EstimateResponse>(`/api/estimates/${id}/context`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(panel) }),
   ingestUrl: (url: string) => http<{ url: string; text: string; status: string }>("/api/ingest/url", jsonBody({ url })),
-  recompute: (id: string, overrides: { ai_boost?: number; engineer_count?: number }) =>
+  recompute: (id: string, overrides: { ai_boost?: number; engineer_count?: number; variables?: Partial<Variables> }) =>
     http<EstimateResponse>(`/api/estimates/${id}/recompute`, jsonBody(overrides)),
   recost: (id: string) => http<EstimateResponse>(`/api/estimates/${id}/recost`, { method: "POST" }),
   computeScenarios: (id: string) => http<EstimateResponse>(`/api/estimates/${id}/scenarios`, jsonBody({})),
@@ -121,6 +121,7 @@ export const api = {
     http<{
       text: string; kind: string; confidence: number; duplicate_of: string | null;
       taxonomy_kind: string; taxonomy_confidence: number; title: string; epic: string;
+      priority: "must" | "should" | "could" | "wont" | null;
     }[]>("/api/context/decompose-requirements", jsonBody({ text, existing })),
   summarizeDocument: (text: string) => http<{ summary: string }>("/api/context/summarize", jsonBody({ text })),
 
@@ -139,6 +140,17 @@ export const api = {
   deleteRateCard: (id: string) => http(`/api/rate-cards/${id}`, { method: "DELETE" }),
   updateRateCard: (id: string, rows: { discipline: string; tier: string; location: string; day_rate: number }[]) =>
     http<{ id: string; name: string }>(`/api/rate-cards/${id}`, { ...jsonBody({ rows }), method: "PUT" }),
+
+  // --- Variables (D31 tier 1: org-wide defaults, admin-only to write) ---
+  getVariables: () => http<{ effective: Variables; overridden_fields: string[] }>("/api/variables"),
+  updateVariables: (overrides: Partial<Variables>) =>
+    http<{ effective: Variables; overridden_fields: string[] }>("/api/variables", { ...jsonBody(overrides), method: "PUT" }),
+
+  // --- T-shirt scale (D34: org-wide only, admin-only to write) ---
+  getTshirtScale: () =>
+    http<{ sizes: Record<string, Record<string, number>>; overridden_sizes: string[] }>("/api/tshirt-scale"),
+  updateTshirtScale: (overrides: Record<string, Record<string, number>>) =>
+    http<{ sizes: Record<string, Record<string, number>>; overridden_sizes: string[] }>("/api/tshirt-scale", { ...jsonBody(overrides), method: "PUT" }),
 
   // --- Accounts / opportunities / users (admin) ---
   listAccounts: () => http<{ id: string; name: string; sf_account_id?: string }[]>("/api/accounts"),

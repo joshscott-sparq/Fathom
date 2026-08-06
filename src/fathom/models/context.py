@@ -13,6 +13,7 @@ from enum import Enum
 
 from pydantic import BaseModel, Field
 
+from .enums import RiskSeverity
 from .work_item import WorkItem
 
 
@@ -51,6 +52,15 @@ class ContextEntry(BaseModel):
     duplicate_of: str | None = Field(
         default=None,
         description="Id of an existing entry this substantially restates; grouped with it in the UI.",
+    )
+    severity: RiskSeverity | None = Field(
+        default=None,
+        description="Quantified impact for Risk/Accelerator entries (D30) — reuses the same "
+        "None/Low/Moderate/High/Extreme ladder as complexity factors, resolved to a velocity "
+        "impact via Variables.risk_impact_for()/accelerator_impact_for(). None is treated as "
+        "Moderate at read time (the flat impact every entry got before per-entry severity "
+        "existed), so existing entries don't silently change until someone picks a value. "
+        "Unused/ignored for Requirements/Assumptions entries.",
     )
 
 

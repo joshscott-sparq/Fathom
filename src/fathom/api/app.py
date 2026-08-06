@@ -33,6 +33,7 @@ from ..models.results import ClientContext
 from ..models.scenario import Scenario
 from ..models.solution_graph import SolutionGraph
 from ..models.team import RateRow
+from ..models.variables import Variables
 from ..service import EstimateService
 
 app = FastAPI(title="Architect.IQ", version="0.1.0")
@@ -167,6 +168,7 @@ class DecomposedRequirement(BaseModel):
     taxonomy_confidence: float
     title: str
     epic: str
+    priority: str | None = None
 
 
 class SummarizeRequest(BaseModel):
@@ -300,6 +302,7 @@ def decompose_requirements(req: DecomposeRequirementsRequest, user: User = Depen
         it["taxonomy_kind"] = classified["kind"]
         it["taxonomy_confidence"] = classified["confidence"]
         it["title"] = classified["title"]
+        it["priority"] = llm.detect_priority(it["text"])
 
     texts = [it["text"] for it in items]
     try:
@@ -608,6 +611,84 @@ def delete_rate_card(card_id: str, admin: User = Depends(require_admin)) -> dict
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     return {"status": "deleted", "id": card_id}
+
+
+class VariablesUpdateRequest(BaseModel):
+    """Partial Variables override (D31 tier 1, org-wide defaults) — every field
+    optional; only fields actually present in the request body are stored as
+    overrides, so unset fields keep falling back to the `variables.yaml` default."""
+
+    real_weight: float | None = None
+    opt_weight: float | None = None
+    pes_weight: float | None = None
+    epic_multiplier: float | None = None
+    feature_multiplier: float | None = None
+    avg_story_pts: float | None = None
+    ai_boost_min: float | None = None
+    ai_boost_max: float | None = None
+    ba_ratio: float | None = None
+    designer_ratio: float | None = None
+    devops_ratio: float | None = None
+    qa_ratio: float | None = None
+    hours_per_sprint: float | None = None
+    weeks_in_sprint: int | None = None
+    working_month_days: int | None = None
+    hours_per_day: float | None = None
+    risk_impact_low: float | None = None
+    risk_impact_moderate: float | None = None
+    risk_impact_high: float | None = None
+    risk_impact_extreme: float | None = None
+    accelerator_impact_low: float | None = None
+    accelerator_impact_moderate: float | None = None
+    accelerator_impact_high: float | None = None
+    accelerator_impact_extreme: float | None = None
+    days_per_story_point: float | None = None
+
+
+@app.get("/api/variables")
+def get_variables(user: User = Depends(get_current_user)) -> dict:
+    """Org-wide Variables (D31 tier 1): effective values (YAML defaults with any
+    admin overrides applied) plus which fields are currently overridden."""
+    return {
+        "effective": service.get_variables().model_dump(),
+        "overridden_fields": sorted(service.get_variable_overrides().keys()),
+    }
+
+
+@app.put("/api/variables")
+def update_variables(req: VariablesUpdateRequest, admin: User = Depends(require_admin)) -> dict:
+    """Set org-wide Variables overrides. Only fields present in the request body
+    are stored; omit a field to leave it at whatever it currently resolves to
+    (default or a previously-set override)."""
+    overrides = req.model_dump(exclude_unset=True, exclude_none=True)
+    effective = service.update_variables(overrides)
+    return {
+        "effective": effective.model_dump(),
+        "overridden_fields": sorted(service.get_variable_overrides().keys()),
+    }
+
+
+@app.get("/api/tshirt-scale")
+def get_tshirt_scale(user: User = Depends(get_current_user)) -> dict:
+    """The t-shirt size -> points matrix in effect (D34) — YAML defaults with
+    any admin overrides applied. Single-tier, org-wide only (see D31's scoping
+    note): unlike Variables, there's no per-estimate version of this."""
+    return {
+        "sizes": service.get_tshirt_scale(),
+        "overridden_sizes": sorted(service.get_tshirt_scale_overrides().keys()),
+    }
+
+
+@app.put("/api/tshirt-scale")
+def update_tshirt_scale(overrides: dict[str, dict[str, float]], admin: User = Depends(require_admin)) -> dict:
+    """Set org-wide t-shirt scale overrides — size -> {epic/feature/story -> points}.
+    Only the sizes/levels present in the request body are stored; the rest keep
+    falling back to whatever they currently resolve to."""
+    effective = service.update_tshirt_scale(overrides)
+    return {
+        "sizes": effective,
+        "overridden_sizes": sorted(service.get_tshirt_scale_overrides().keys()),
+    }
 
 
 @app.post("/api/estimates/{estimate_id}/recost", response_model=EstimateResponse)

@@ -102,6 +102,7 @@ export interface WorkItem {
   extraction_confidence: number;
   notes?: string | null;
   reference?: string | null;
+  priority?: "must" | "should" | "could" | "wont" | null;
 }
 
 export interface ContextEntry {
@@ -114,6 +115,7 @@ export interface ContextEntry {
   status: "ingested" | "processing" | "error";
   created_at?: string;
   duplicate_of?: string | null;
+  severity?: "None" | "Low" | "Moderate" | "High" | "Extreme" | null;
 }
 
 export interface ContextPhase {
@@ -146,12 +148,41 @@ export interface ContextPanel {
   pinned_work_items: WorkItem[];
 }
 
+export interface Variables {
+  real_weight: number;
+  opt_weight: number;
+  pes_weight: number;
+  epic_multiplier: number;
+  feature_multiplier: number;
+  avg_story_pts: number;
+  ai_boost_min: number;
+  ai_boost_max: number;
+  ba_ratio: number;
+  designer_ratio: number;
+  devops_ratio: number;
+  qa_ratio: number;
+  hours_per_sprint: number;
+  weeks_in_sprint: number;
+  working_month_days: number;
+  hours_per_day: number;
+  risk_impact_low: number;
+  risk_impact_moderate: number;
+  risk_impact_high: number;
+  risk_impact_extreme: number;
+  accelerator_impact_low: number;
+  accelerator_impact_moderate: number;
+  accelerator_impact_high: number;
+  accelerator_impact_extreme: number;
+  days_per_story_point: number;
+}
+
 export interface Graph {
   project_name: string;
   context_panel?: ContextPanel;
   tags?: string[];
   complexity_factors?: LinkedFactor[];
   scenarios?: ScenarioResult[];
+  variables?: Variables;
   requirements: { id: string; text: string }[];
   capabilities: { id: string; name: string }[];
   components: Component[];
