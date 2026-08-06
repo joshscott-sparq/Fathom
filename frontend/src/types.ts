@@ -101,6 +101,7 @@ export interface WorkItem {
   linked_factors?: LinkedFactor[];
   extraction_confidence: number;
   notes?: string | null;
+  reference?: string | null;
 }
 
 export interface ContextEntry {

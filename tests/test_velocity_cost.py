@@ -1,12 +1,12 @@
 """Contract: engineer-count cost model — more engineers shorten the timeline
 but raise total cost (DECISIONS.md D11 fix)."""
 
-from architect_iq.core import estimation
-from architect_iq.core.recompute import RecomputeOverrides, recompute
-from architect_iq.core.velocity import team_velocity
-from architect_iq.models.enums import Location
-from architect_iq.models.results import ClientContext
-from architect_iq.models.team import RateRow
+from fathom.core import estimation
+from fathom.core.recompute import RecomputeOverrides, recompute
+from fathom.core.velocity import team_velocity
+from fathom.models.enums import Location
+from fathom.models.results import ClientContext
+from fathom.models.team import RateRow
 
 RAG_PRD = "- grounded llm answers over the knowledge base on databricks\n- vector store retrieval"
 

@@ -5,9 +5,9 @@ import io
 import pytest
 from fastapi.testclient import TestClient
 
-from architect_iq.demo import DEMO_SCENARIOS, is_seeded, seed_demo
-from architect_iq.persistence.store import SQLiteEstimateRepository
-from architect_iq.service import EstimateService
+from fathom.demo import DEMO_SCENARIOS, is_seeded, seed_demo
+from fathom.persistence.store import SQLiteEstimateRepository
+from fathom.service import EstimateService
 
 
 @pytest.fixture()

@@ -4,7 +4,7 @@ import math
 
 import pytest
 
-from architect_iq.data_loader import (
+from fathom.data_loader import (
     load_complexity_factors,
     load_estimate_kinds,
     load_practices,
@@ -13,7 +13,7 @@ from architect_iq.data_loader import (
     load_tshirt_scale,
     load_variables,
 )
-from architect_iq.models import (
+from fathom.models import (
     CureAssessment,
     RiskSeverity,
     ThreePoint,

@@ -46,7 +46,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-service = EstimateService(db_path=os.environ.get("FATHOM_DB", "architect_iq.db"))
+service = EstimateService(db_path=os.environ.get("FATHOM_DB", "fathom.db"))
 
 
 # --- Auth dependencies ---
@@ -117,7 +117,7 @@ def auth_providers() -> dict:
 def google_login() -> dict:
     if not oidc.google_enabled():
         raise HTTPException(status_code=400, detail="Google SSO is not configured")
-    return {"url": oidc.google_auth_url(state="architectiq")}
+    return {"url": oidc.google_auth_url(state="fathom")}
 
 
 @app.get("/api/auth/google/callback")

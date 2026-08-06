@@ -341,6 +341,11 @@ export function EstimateView({ initial, canEdit = true, canComment = true, canCl
                                 disabled={!canEdit}
                                 onChange={(e) => updateItem(wi.id, { notes: e.target.value })}
                               />
+                              {wi.reference && (
+                                <div className="text-muted text-[11px] mt-1">
+                                  Source: <span title={wi.reference}>{wi.reference}</span>
+                                </div>
+                              )}
                             </td>
                           </tr>
                         )}

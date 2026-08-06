@@ -2,12 +2,12 @@
 
 import numpy as np
 
-from architect_iq.core import estimation, montecarlo
-from architect_iq.core.estimation import _three_point
-from architect_iq.core.factors import complexity_impact, risk_sigma
-from architect_iq.models.enums import WorkLevel
-from architect_iq.models.results import ClientContext
-from architect_iq.models.work_item import ThreePoint
+from fathom.core import estimation, montecarlo
+from fathom.core.estimation import _three_point
+from fathom.core.factors import complexity_impact, risk_sigma
+from fathom.models.enums import WorkLevel
+from fathom.models.results import ClientContext
+from fathom.models.work_item import ThreePoint
 
 RAG_PRD = "- retrieval augmented generation over the knowledge base on databricks\n- vector store, embeddings, evaluation harness"
 
@@ -44,8 +44,8 @@ def test_factors_reduce_velocity_and_raise_cost():
 
 def test_complexity_impact_is_floored():
     # Even with huge nominal impact, velocity erosion is capped (>-70% of AvgStoryPts).
-    from architect_iq.models.complexity import LinkedFactor
-    from architect_iq.models.enums import FactorScope, RiskSeverity
+    from fathom.models.complexity import LinkedFactor
+    from fathom.models.enums import FactorScope, RiskSeverity
 
     huge = [LinkedFactor(family=f"F{i}", severity=RiskSeverity.EXTREME, scope=FactorScope.PROJECT, impact=-1.0) for i in range(20)]
     assert complexity_impact(huge, 9.0) == -0.7 * 9.0
@@ -68,8 +68,8 @@ def test_large_features_decompose_into_stories():
 
 
 def test_risk_sigma_grows_with_factors_and_divergence():
-    from architect_iq.models.complexity import LinkedFactor
-    from architect_iq.models.enums import FactorScope, RiskSeverity
+    from fathom.models.complexity import LinkedFactor
+    from fathom.models.enums import FactorScope, RiskSeverity
 
     few = [LinkedFactor(family="A", severity=RiskSeverity.LOW, scope=FactorScope.PROJECT, impact=-0.25)]
     many = few + [LinkedFactor(family=f"B{i}", severity=RiskSeverity.HIGH, scope=FactorScope.PROJECT, impact=-0.75) for i in range(4)]

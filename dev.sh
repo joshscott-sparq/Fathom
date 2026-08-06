@@ -21,7 +21,7 @@ if [ ! -d .venv ]; then
   uv venv --python 3.12
 fi
 
-if ! .venv/bin/python -c "import architect_iq" >/dev/null 2>&1; then
+if ! .venv/bin/python -c "import fathom" >/dev/null 2>&1; then
   echo "==> Installing backend dependencies"
   uv pip install -e ".[dev]"
 fi
@@ -42,7 +42,7 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 echo "==> Starting backend on http://localhost:8000"
-.venv/bin/python -m uvicorn architect_iq.api.app:app --port 8000 --reload &
+.venv/bin/python -m uvicorn fathom.api.app:app --port 8000 --reload &
 pids+=("$!")
 
 if [ "$MODE" = "demo" ]; then

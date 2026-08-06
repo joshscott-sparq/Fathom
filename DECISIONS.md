@@ -5,7 +5,7 @@ Log of judgment calls made during the Architect.IQ build that the spec
 reason, and the spec reference it relates to.
 
 ## D1. Repo layout: standalone at root
-**Call:** Build the engine at the repository root (`src/architect_iq/`, `tests/`,
+**Call:** Build the engine at the repository root (`src/fathom/`, `tests/`,
 `skill/`), not under `packages/architect-iq/`.
 **Why:** The spec text (§, §6.2) names `Sparq-Holding-Inc/solutions-labs` with a
 `packages/architect-iq/` path, but the actual repo is the standalone
@@ -55,6 +55,42 @@ factor families" but the prose enumerates ~29 depending on how compound entries
 ("schedule/scope/cost flexibility", "data availability/quality") are split.
 **Why:** Needs the workbook family list to reconcile exactly. FLAGGED to owner.
 Correcting is a data edit. Ref §2.4.
+
+## D29. Work items get a `reference` field so classified items keep a source link wherever they're routed
+
+**Call:** Added `WorkItem.reference: str | None`, set by the frontend's `toWorkItem()`
+alongside the existing `notes` field whenever the semantic classifier (D25/D26)
+routes a dropped file/URL's content into the Estimate work breakdown as an
+epic/feature/story. Mirrors `ContextEntry.reference` (filename/URL), which
+risk/assumption/accelerator-routed items already carried before this change —
+this closes the one gap where a classified item lost its source link: rows
+that land in the Estimate grid instead of a Context Panel tab. Displayed as a
+small non-editable "Source: <file/URL>" line in the row's existing collapsible
+notes area (D26), not a new UI element.
+**Why:** Owner asked that any item the semantic layer flags — regardless of
+which kind, and therefore which destination (register tab vs. work
+breakdown) — carry a traceable link back to the document/URL it came from.
+Verified end-to-end: a dropped file containing a plain requirement plus a
+spec-iq `⚑ Gap:`/`⚠ Conflict:` marker produced a Requirements summary entry,
+a Risks entry, an Assumptions entry, and a routed Feature row, all four
+showing the same source filename.
+
+## D28. Python package renamed `architect_iq` → `fathom`
+
+**Call:** `git mv src/architect_iq src/fathom`, plus updating every import,
+`pyproject.toml` (`name`, `description`, `[project.scripts]` entry point,
+`[tool.hatch.build.targets.wheel] packages`), `dev.sh`, and doc references.
+The default SQLite filename (`persistence/*.py`'s `db_path` default, and
+`FATHOM_DB`'s fallback in `api/app.py`) also moved from `architect_iq.db` to
+`fathom.db` for consistency — existing local `architect_iq.db` files need a
+manual rename to carry forward (not scripted; `*.db` is gitignored, so this
+only affects local dev data, not anything committed).
+**Why:** Closes the code-level half of the Architect.IQ → Fathom rename
+(D25–D27 area and earlier commits had already renamed the product/UI/env-var
+naming; the package itself was explicitly left as a separate, larger pass —
+see the prior "Python package/module is still named `architect_iq` on disk"
+note this entry supersedes). Owner asked for it directly after noticing
+`architect_iq` in an internal command.
 
 ## D27. Skill-authored flags (spec-iq's gap/conflict markers) recognized by exact text pattern, not a general skill protocol
 
@@ -376,8 +412,8 @@ feature is immediately testable with dummy data; a "Load demo data" button also
 re-seeds on demand. Demo estimates are name-prefixed `[Demo]`; outside demo mode
 the list filters them out client-side, and the backend `POST /api/demo/seed`
 endpoint stays available but is only invoked by the demo frontend. Backend demo
-seeding lives in `architect_iq/demo.py` (also runnable headless via
-`python -m architect_iq.demo`).
+seeding lives in `fathom/demo.py` (also runnable headless via
+`python -m fathom.demo`).
 **Why:** Owner asked that demo show only under `npm run demo`, and that demo mode
 always serve as a full sample sandbox exercising every function. Frontend-flag
 gating + client-side `[Demo]` filtering honors both without backend mode

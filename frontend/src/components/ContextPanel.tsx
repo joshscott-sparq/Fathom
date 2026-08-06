@@ -22,10 +22,13 @@ const TAB_BY_TAXONOMY_KIND: Record<string, "risks" | "assumptions" | "accelerato
 // cluster together) — never the source filename/URL. `d.title` is a short
 // name distinct from the full sentence; the full sentence becomes `notes` so
 // dropping detail into a terse grid cell doesn't lose it.
-function toWorkItem(d: { text: string; title: string; epic: string; taxonomy_kind: string; taxonomy_confidence: number }): WorkItem {
+function toWorkItem(
+  d: { text: string; title: string; epic: string; taxonomy_kind: string; taxonomy_confidence: number },
+  reference: string,
+): WorkItem {
   const base = {
     id: wiUid(), parent_id: null, phase_id: null,
-    points: { realistic: 0 }, practice: null, notes: d.text,
+    points: { realistic: 0 }, practice: null, notes: d.text, reference,
     cure: DEFAULT_CURE, extraction_confidence: d.taxonomy_confidence,
   };
   if (d.taxonomy_kind === "epic") return { ...base, level: "epic", epic: d.title, feature: null, story: null };
@@ -274,7 +277,7 @@ function EntryTab({ tabKey, entries, scoped, hint, phases, canEdit, onAdd, onRem
           onAdd(destTab, { source_type: sourceType, reference, content: d.text });
           routedCounts[destTab] = (routedCounts[destTab] ?? 0) + 1;
         } else {
-          workItems.push(toWorkItem(d));
+          workItems.push(toWorkItem(d, reference));
           routedCounts.estimate = (routedCounts.estimate ?? 0) + 1;
         }
       }

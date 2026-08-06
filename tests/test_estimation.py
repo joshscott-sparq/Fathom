@@ -2,11 +2,11 @@
 
 import math
 
-from architect_iq.core import estimation, montecarlo
-from architect_iq.core.matcher import score_patterns
-from architect_iq.data_loader import load_patterns, load_variables
-from architect_iq.models.results import ClientContext
-from architect_iq.models.work_item import ThreePoint
+from fathom.core import estimation, montecarlo
+from fathom.core.matcher import score_patterns
+from fathom.data_loader import load_patterns, load_variables
+from fathom.models.results import ClientContext
+from fathom.models.work_item import ThreePoint
 
 RAG_PRD = """
 - Build a retrieval augmented generation platform over our knowledge base

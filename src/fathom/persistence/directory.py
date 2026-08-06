@@ -27,7 +27,7 @@ def _id() -> str:
 
 
 class SQLiteDirectoryRepository:
-    def __init__(self, db_path: str | Path = "architect_iq.db"):
+    def __init__(self, db_path: str | Path = "fathom.db"):
         self.db_path = str(db_path)
         self._init_schema()
         self._seed_users()

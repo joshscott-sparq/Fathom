@@ -1,13 +1,13 @@
 """Contract: scenario computation and the optimization advisor."""
 
-from architect_iq.core import advisor, estimation
-from architect_iq.core.rates import RateCard
-from architect_iq.core.scenarios import compute_scenario, default_scenarios
-from architect_iq.data_loader import load_dev_models
-from architect_iq.models.enums import Location
-from architect_iq.models.results import ClientContext
-from architect_iq.models.scenario import Scenario
-from architect_iq.models.team import RateRow
+from fathom.core import advisor, estimation
+from fathom.core.rates import RateCard
+from fathom.core.scenarios import compute_scenario, default_scenarios
+from fathom.data_loader import load_dev_models
+from fathom.models.enums import Location
+from fathom.models.results import ClientContext
+from fathom.models.scenario import Scenario
+from fathom.models.team import RateRow
 
 RAG_PRD = "- grounded llm answers over the knowledge base on databricks\n- vector store retrieval\n- evaluation harness"
 

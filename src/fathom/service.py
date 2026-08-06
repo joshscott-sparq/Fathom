@@ -25,7 +25,7 @@ from .persistence.store import EstimateRepository, SQLiteEstimateRepository, Sto
 
 
 class EstimateService:
-    def __init__(self, repo: EstimateRepository | None = None, db_path: str | Path = "architect_iq.db"):
+    def __init__(self, repo: EstimateRepository | None = None, db_path: str | Path = "fathom.db"):
         self.repo = repo or SQLiteEstimateRepository(db_path)
         # Actuals held in-process for now; a table lands with the Phase 4 loop.
         self._actuals: dict[str, ActualOutcome] = {}

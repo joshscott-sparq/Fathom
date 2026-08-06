@@ -5,11 +5,11 @@ import io
 import pytest
 from fastapi.testclient import TestClient
 
-from architect_iq.core.rates import RateCard, parse_rate_file, recost
-from architect_iq.models.enums import Location
-from architect_iq.service import EstimateService
-from architect_iq.persistence.store import SQLiteEstimateRepository
-from architect_iq.models.results import ClientContext
+from fathom.core.rates import RateCard, parse_rate_file, recost
+from fathom.models.enums import Location
+from fathom.service import EstimateService
+from fathom.persistence.store import SQLiteEstimateRepository
+from fathom.models.results import ClientContext
 
 RAG_PRD = "- retrieval augmented generation over the knowledge base on databricks\n- grounded llm answers"
 

@@ -78,7 +78,7 @@ every artifact is a projection of one object. See
 **Scenarios & advisor**
 - **AI Tiers**: a 5-tier human-to-AI-agent ratio ladder (Tier 1 fully manual through
   Tier 5's 1:20 human-to-agent ratio), each with a defined human role, AI role, and
-  velocity/effort impact — data-driven in [`dev_models.yaml`](src/architect_iq/data/dev_models.yaml).
+  velocity/effort impact — data-driven in [`dev_models.yaml`](src/fathom/data/dev_models.yaml).
 - Multiple staffing models per estimate — every AI Tier; US / nearshore / blended —
   computed and compared side by side. The active estimate's Deal-shaping panel
   picks a Tier directly (replaces a free-form AI-boost slider).
@@ -139,12 +139,12 @@ see those estimates read-only.
 
 | Layer | Location | What it does |
 |-------|----------|--------------|
-| Core engine | `src/architect_iq/core/` | matcher, estimation, Monte Carlo, recompute, scenarios, advisor, rates, velocity, vision, llm |
-| Models | `src/architect_iq/models/` | Solution Graph, work items, patterns, scenarios |
-| Data (versioned) | `src/architect_iq/data/` | t-shirt scale, variables, complexity factors, patterns, dev models, pricing, estimate-kind taxonomy |
-| Persistence | `src/architect_iq/persistence/` | SQLite: versioned graphs + rate cards |
-| Memory | `src/architect_iq/memory/` | reference-class retrieval + pattern-prior tuning |
-| API | `src/architect_iq/api/` | FastAPI |
+| Core engine | `src/fathom/core/` | matcher, estimation, Monte Carlo, recompute, scenarios, advisor, rates, velocity, vision, llm |
+| Models | `src/fathom/models/` | Solution Graph, work items, patterns, scenarios |
+| Data (versioned) | `src/fathom/data/` | t-shirt scale, variables, complexity factors, patterns, dev models, pricing, estimate-kind taxonomy |
+| Persistence | `src/fathom/persistence/` | SQLite: versioned graphs + rate cards |
+| Memory | `src/fathom/memory/` | reference-class retrieval + pattern-prior tuning |
+| API | `src/fathom/api/` | FastAPI |
 | Frontend | `frontend/` | React + TypeScript + Tailwind (Vite) |
 
 ## Configuration
@@ -156,7 +156,7 @@ Copy [`.env.example`](.env.example) to `.env` (gitignored) and set values:
 | `ANTHROPIC_API_KEY` | Enables LLM ingest/matching/advisor and image vision. Omitted → deterministic fallback. |
 | `FATHOM_LLM_MODEL` | Override the Claude model (default `claude-sonnet-5`). |
 | `FATHOM_DISABLE_LLM` | Force the deterministic path even with a key. |
-| `FATHOM_DB` | SQLite path (default `architect_iq.db`). |
+| `FATHOM_DB` | SQLite path (default `fathom.db`). |
 | `FATHOM_CORS` | Allowed API origins (comma-separated). |
 | `FATHOM_SECRET` | **Required in production** — JWT signing secret (32+ bytes). |
 | `FATHOM_ADMIN_EMAIL` / `FATHOM_ADMIN_PASSWORD` | Override the seeded admin credentials. |
@@ -165,7 +165,7 @@ Copy [`.env.example`](.env.example) to `.env` (gitignored) and set values:
 
 Real pricing is never committed: `data/pricing.local.yaml` (gitignored) overrides
 the committed placeholder `pricing.example.yaml`. You can also manage rate cards
-at runtime in the **Rates** tab. Schema: [`data/SCHEMA.md`](src/architect_iq/data/SCHEMA.md).
+at runtime in the **Rates** tab. Schema: [`data/SCHEMA.md`](src/fathom/data/SCHEMA.md).
 
 ## Quick start
 
@@ -195,7 +195,7 @@ Terminal 1 (backend, port 8000):
 ```bash
 uv venv --python 3.12
 uv pip install -e ".[dev]"
-.venv/bin/python -m uvicorn architect_iq.api.app:app --port 8000 --reload
+.venv/bin/python -m uvicorn fathom.api.app:app --port 8000 --reload
 ```
 
 Terminal 2 (frontend, proxies `/api` → `:8000`), started **after** the backend is up:
@@ -246,7 +246,7 @@ error responses, Nginx `try_files`, Netlify `_redirects`, etc.).
 
 ```bash
 uv pip install -e .            # or: pip install .
-uvicorn architect_iq.api.app:app --host 0.0.0.0 --port 8000 --workers 4
+uvicorn fathom.api.app:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 
 Set `FATHOM_CORS` to the frontend origin, provide `.env` (or real env vars)
@@ -268,5 +268,5 @@ without being merged into it — loosely coupled, not app dependencies. See
 
 ## Not yet built (later phases)
 
-The `architectiq` CLI, xlsx/summary emitters, the Claude skill wrapper, and deeper
+The `fathom` CLI, xlsx/summary emitters, the Claude skill wrapper, and deeper
 per-item sizing. See DECISIONS.md D11 for remaining skeleton-depth items.

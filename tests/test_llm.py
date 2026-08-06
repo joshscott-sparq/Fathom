@@ -1,10 +1,10 @@
 """Contract: LLM ingest/matching/capabilities via an injected fake client,
 plus deterministic fallback. No network."""
 
-from architect_iq.core import estimation, llm
-from architect_iq.data_loader import load_estimate_kinds
-from architect_iq.models.graph import EdgeKind
-from architect_iq.models.results import ClientContext
+from fathom.core import estimation, llm
+from fathom.data_loader import load_estimate_kinds
+from fathom.models.graph import EdgeKind
+from fathom.models.results import ClientContext
 
 RAG_PRD = "- grounded llm answers over our knowledge base\n- runs on databricks with a vector store"
 

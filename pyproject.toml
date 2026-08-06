@@ -1,7 +1,7 @@
 [project]
-name = "architect-iq"
+name = "fathom"
 version = "0.1.0"
-description = "Architect.IQ estimation engine: PRD + client context to a calibrated project estimate (Phase 1)."
+description = "Fathom estimation engine: PRD + client context to a calibrated project estimate (Phase 1)."
 readme = "README.md"
 requires-python = ">=3.12"
 authors = [{ name = "Sparq Solutions Consulting" }]
@@ -21,7 +21,7 @@ dependencies = [
 ]
 
 [project.scripts]
-architectiq = "architect_iq.agent.cli:main"
+fathom = "fathom.agent.cli:main"
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "httpx>=0.27"]
@@ -31,7 +31,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/architect_iq"]
+packages = ["src/fathom"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

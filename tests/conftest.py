@@ -27,7 +27,7 @@ def _disable_llm_by_default(monkeypatch):
 def build_client(tmp_path, monkeypatch, role: str = "admin") -> TestClient:
     monkeypatch.setenv("FATHOM_DB", str(tmp_path / "api.db"))
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-    from architect_iq.api import app as app_module
+    from fathom.api import app as app_module
 
     importlib.reload(app_module)
     client = TestClient(app_module.app)

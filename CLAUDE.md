@@ -10,11 +10,10 @@ offerings, hence the different naming pattern). Named for the nautical unit of d
 and the verb "to fathom" (to grasp the full extent of something), both of which fit a
 tool that measures and estimates scope from context. Takes a PRD plus client context
 and produces a reference architecture, effort estimate, cost model, and deal-shaping
-scenarios. Standalone full-stack app — FastAPI backend (`src/architect_iq/`)
+scenarios. Standalone full-stack app — FastAPI backend (`src/fathom/`)
 + React/TypeScript/Tailwind frontend (`frontend/`) — not a library or CLI tool, despite
-the `architectiq` console script stub in `pyproject.toml` (not yet implemented; see
-DECISIONS.md D11). The Python package/module is still named `architect_iq` on disk —
-see below if you're taking on the full code-level rename.
+the `fathom` console script stub in `pyproject.toml` (not yet implemented; see
+DECISIONS.md D11).
 
 `DECISIONS.md` is the log of every non-obvious judgment call made building this (why
 things are the way they are, what was explicitly flagged to the product owner and not
@@ -105,7 +104,7 @@ of the scenario engine, grounded in reference-class history.
 
 ### Data is versioned YAML, not code
 
-`src/architect_iq/data/*.yaml` (patterns, complexity factors, t-shirt scale, variables,
+`src/fathom/data/*.yaml` (patterns, complexity factors, t-shirt scale, variables,
 dev models / AI Tiers, pricing) are loaded by `data_loader.py` and cached
 (`@lru_cache`). Adding or tuning a pattern, factor, or AI Tier is a data edit, not a code
 change — see `dev_models.yaml`'s comment header and D23 for how the 5-tier AI Tier
@@ -155,6 +154,10 @@ says so) becomes a `WorkItem` in the estimate's work breakdown, with `title` as 
 grid's short label and the full sentence preserved in `WorkItem.notes` (D26).
 Dropping a file now adds exactly **one** Requirements entry (a 2-5 bullet summary),
 not a decomposed pile — everything else goes to its real destination instead (D26).
+Whichever tab a classified item lands in, it keeps a `reference` back to the
+file/URL it came from — `ContextEntry.reference` for register-tab items,
+`WorkItem.reference` for work-breakdown items (D29) — shown as a small
+non-editable source tag/line in each case.
 
 New `WorkItem`-routed items can't be appended to `graph.work_items` via a one-shot
 write: `service.recalculate_from_context()` (the Context Panel's debounced
@@ -183,7 +186,7 @@ versioning and `persistence/rate_cards.py`'s rate-card management (multiple save
 one active + one default).
 
 All three persistence repos share one SQLite file (`FATHOM_DB`, default
-`architect_iq.db`) — swappable to Postgres behind the same repository interfaces if
+`fathom.db`) — swappable to Postgres behind the same repository interfaces if
 needed (README notes this as the multi-instance path).
 
 ### Demo mode
@@ -273,8 +276,8 @@ the last two tiers are ongoing maturity work, not one-time fixes.
 - **`seed_demo()` isn't concurrency-safe** — two overlapping `POST /api/demo/seed`
   calls can double-create demo estimates (see CLAUDE.md's Demo mode section above). A
   background task for this was already spawned; confirm it landed before closing.
-- **Dangling CLI entry point.** `pyproject.toml`'s `[project.scripts] architectiq =
-  "architect_iq.agent.cli:main"` points at a module that doesn't exist — `pip install -e .`
+- **Dangling CLI entry point.** `pyproject.toml`'s `[project.scripts] fathom =
+  "fathom.agent.cli:main"` points at a module that doesn't exist — `pip install -e .`
   ships a console script that crashes on invocation. Either remove the entry point until
   a real CLI is built, or build a minimal one (see tier 3).
 

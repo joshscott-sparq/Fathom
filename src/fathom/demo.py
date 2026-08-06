@@ -7,7 +7,7 @@ estimate with recorded actuals that tunes the next one's prior, and a
 recomputed estimate that shows versioning.
 
 Idempotent by project name: re-seeding skips scenarios already present. Run as
-`python -m architect_iq.demo [db_path]` for headless seeding.
+`python -m fathom.demo [db_path]` for headless seeding.
 """
 
 from __future__ import annotations
@@ -318,7 +318,7 @@ def seed_demo(service: EstimateService) -> dict:
 def _main() -> None:
     import sys
 
-    db_path = sys.argv[1] if len(sys.argv) > 1 else "architect_iq.db"
+    db_path = sys.argv[1] if len(sys.argv) > 1 else "fathom.db"
     summary = seed_demo(EstimateService(db_path=db_path))
     print(f"Seeded {summary['created_count']} demo estimates into {db_path}. Total: {summary['total']}.")
 

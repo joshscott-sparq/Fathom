@@ -95,6 +95,13 @@ class WorkItem(BaseModel):
     notes: str | None = Field(
         default=None, description="Free-text detail/rationale for this row, hidden by default in the UI."
     )
+    reference: str | None = Field(
+        default=None,
+        description="Filename or URL of the source document this row was classified/extracted "
+        "from, if any (D25's classify_kind routing). Mirrors ContextEntry.reference so a "
+        "classified item keeps a traceable link back to its source artifact whether it's "
+        "routed to a Context Panel tab or straight into the work breakdown.",
+    )
     linked_factors: list[LinkedFactor] = Field(
         default_factory=list,
         description="Item-scoped complexity/risk factors (§2.1).",

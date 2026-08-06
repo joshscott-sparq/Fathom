@@ -51,7 +51,7 @@ def _rows_from_json(payload: str) -> list[RateRow]:
 class SQLiteRateCardRepository:
     """SQLite-backed rate-card store. Seeds a default card on first use."""
 
-    def __init__(self, db_path: str | Path = "architect_iq.db"):
+    def __init__(self, db_path: str | Path = "fathom.db"):
         self.db_path = str(db_path)
         self._init_schema()
         self._seed_default()

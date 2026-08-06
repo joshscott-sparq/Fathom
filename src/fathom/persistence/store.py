@@ -75,7 +75,7 @@ class EstimateRepository(ABC):
 class SQLiteEstimateRepository(EstimateRepository):
     """SQLite-backed repository. Graphs stored as JSON documents."""
 
-    def __init__(self, db_path: str | Path = "architect_iq.db"):
+    def __init__(self, db_path: str | Path = "fathom.db"):
         self.db_path = str(db_path)
         self._init_schema()
         self._migrate()

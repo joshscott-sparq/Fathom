@@ -2,8 +2,8 @@
 
 import pytest
 
-from architect_iq.data_loader import load_patterns
-from architect_iq.models import (
+from fathom.data_loader import load_patterns
+from fathom.models import (
     Capability,
     Component,
     ComponentType,

@@ -1,10 +1,10 @@
 """Contract: persistence versioning, retrieval, prior tuning, and the service."""
 
-from architect_iq.memory.priors import ActualOutcome, tune_pattern_prior
-from architect_iq.models.results import ClientContext
-from architect_iq.data_loader import load_patterns
-from architect_iq.persistence.store import SQLiteEstimateRepository
-from architect_iq.service import EstimateService
+from fathom.memory.priors import ActualOutcome, tune_pattern_prior
+from fathom.models.results import ClientContext
+from fathom.data_loader import load_patterns
+from fathom.persistence.store import SQLiteEstimateRepository
+from fathom.service import EstimateService
 
 RAG_PRD = "- retrieval augmented generation over knowledge base\n- embeddings vector store on databricks\n- grounded llm answers"
 NET_PRD = "- modernize legacy .net monolith\n- strangler migration behind a gateway\n- extract services"
